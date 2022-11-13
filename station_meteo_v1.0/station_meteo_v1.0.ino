@@ -30,7 +30,12 @@
 
 #include <SimpleDHT.h>
 #define DHT_SENSOR_TYPE DHT_TYPE_11
+#define BLYNK_PRINT Serial // Enables Serial Monitor
 
+//#include <BlynkSimpleEsp8266.h>
+//#include <BlynkSimpleEthernet.h>
+
+char auth[] = "c6JayOO89I5xFlpJ8BHxwYNOAsTj7uh_";
 
 const int ledPin = 8; 
 const int hallPin = 2;
@@ -44,15 +49,19 @@ void setup(){
   Serial.begin(9600);
   pinMode( ledPin, OUTPUT ); 
   pinMode( hallPin, INPUT );
+
+  // Here your Arduino connects to the Blynk Cloud.
+  //Blynk.begin(auth);
 }
 
 
-
-
 void loop() {
+  // All the Blynk Magic happens here...
+  //Blynk.run();
+  
   // lecture du capteur a Effet Hall
   sensorValue = digitalRead( hallPin );
-  Serial.print(sensorValue);
+  Serial.println(sensorValue);
   
   // senseurValue = HIGH sans aimant
   // senseurValue = LOW quand POLE SUD aimant
@@ -61,6 +70,7 @@ void loop() {
   // Allumer eteindre la LED
   digitalWrite( ledPin, sensorValue );
 
+
   // start working...
   Serial.println("=================================");
   Serial.println("Sample DHT11...");
@@ -68,19 +78,26 @@ void loop() {
   // read without samples.
   byte temperature = 0;
   byte humidity = 0;
+  
   int err = SimpleDHTErrSuccess;
   if ((err = dht11.read(&temperature, &humidity, NULL)) != SimpleDHTErrSuccess) {
-    Serial.print("Read DHT11 failed, err="); Serial.print(SimpleDHTErrCode(err));
-    Serial.print(","); Serial.println(SimpleDHTErrDuration(err)); delay(1000);
+    Serial.print("Read DHT11 failed, err=");
+    Serial.print(SimpleDHTErrCode(err));
+    Serial.print(",");
+    Serial.println(SimpleDHTErrDuration(err)); delay(1000);
     return;
   }
+ 
+    Serial.print("Sample OK: ");
+    Serial.print((int)temperature);
+    Serial.print(" *C, "); 
+    Serial.print((int)humidity);
+    Serial.println(" H");
+    // DHT11 sampling rate is 1HZ.
+    delay(1500);
+
   
-  Serial.print("Sample OK: ");
-  Serial.print((int)temperature); Serial.print(" *C, "); 
-  Serial.print((int)humidity); Serial.println(" H");
-  
-  // DHT11 sampling rate is 1HZ.
-  delay(1500);
+
 
   
 }
