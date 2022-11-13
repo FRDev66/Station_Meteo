@@ -54,24 +54,8 @@ void setup(){
   //Blynk.begin(auth);
 }
 
-
-void loop() {
-  // All the Blynk Magic happens here...
-  //Blynk.run();
-  
-  // lecture du capteur a Effet Hall
-  sensorValue = digitalRead( hallPin );
-  Serial.println(sensorValue);
-  
-  // senseurValue = HIGH sans aimant
-  // senseurValue = LOW quand POLE SUD aimant
-  sensorValue = not( sensorValue );
-  
-  // Allumer eteindre la LED
-  digitalWrite( ledPin, sensorValue );
-
-
-  // start working...
+void mesure_temp_humidite() {
+ // start working...
   Serial.println("=================================");
   Serial.println("Sample DHT11...");
   
@@ -94,7 +78,26 @@ void loop() {
     Serial.print((int)humidity);
     Serial.println(" H");
     // DHT11 sampling rate is 1HZ.
-    delay(1500);
+    delay(1500);  
+}
+
+
+void loop() {
+  // All the Blynk Magic happens here...
+  //Blynk.run();
+  
+  // lecture du capteur a Effet Hall
+  sensorValue = digitalRead( hallPin );
+  Serial.println(sensorValue);
+  
+  // senseurValue = HIGH sans aimant
+  // senseurValue = LOW quand POLE SUD aimant
+  sensorValue = not( sensorValue );
+  
+  // Allumer eteindre la LED
+  digitalWrite( ledPin, sensorValue );
+
+  mesure_temp_humidite();
 
   
 
