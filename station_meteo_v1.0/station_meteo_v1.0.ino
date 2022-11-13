@@ -43,7 +43,11 @@ static const int DHT_SENSOR_PIN = 4;
 //SimpleDHT11 dht_sensor( DHT_SENSOR_PIN, DHT_SENSOR_TYPE );
 SimpleDHT11 dht11(DHT_SENSOR_PIN);
 
-int sensorValue; 
+int sensorValue;
+
+int tempoActive = 0;
+// Temps à l'activation de la tempo
+unsigned long tempoDepart = 0;
 
 void setup(){
   Serial.begin(9600);
@@ -52,6 +56,21 @@ void setup(){
 
   // Here your Arduino connects to the Blynk Cloud.
   //Blynk.begin(auth);
+}
+
+void mesure_anemometre() {
+    // lecture du capteur a Effet Hall
+  sensorValue = digitalRead( hallPin );
+  Serial.print("sensorValue = ");
+  Serial.println(sensorValue);
+  
+  // senseurValue = HIGH sans aimant
+  // senseurValue = LOW quand POLE SUD aimant
+  sensorValue = not( sensorValue );
+  
+  // Allumer eteindre la LED
+  digitalWrite( ledPin, sensorValue );
+  //delay(2000);
 }
 
 void mesure_temp_humidite() {
@@ -68,7 +87,7 @@ void mesure_temp_humidite() {
     Serial.print("Read DHT11 failed, err=");
     Serial.print(SimpleDHTErrCode(err));
     Serial.print(",");
-    Serial.println(SimpleDHTErrDuration(err)); delay(1000);
+    Serial.println(SimpleDHTErrDuration(err)); //delay(1000);
     return;
   }
  
@@ -78,7 +97,7 @@ void mesure_temp_humidite() {
     Serial.print((int)humidity);
     Serial.println(" H");
     // DHT11 sampling rate is 1HZ.
-    delay(1500);  
+    //delay(1500);  
 }
 
 
@@ -86,21 +105,30 @@ void loop() {
   // All the Blynk Magic happens here...
   //Blynk.run();
   
-  // lecture du capteur a Effet Hall
-  sensorValue = digitalRead( hallPin );
-  Serial.println(sensorValue);
+  mesure_anemometre();
   
-  // senseurValue = HIGH sans aimant
-  // senseurValue = LOW quand POLE SUD aimant
-  sensorValue = not( sensorValue );
+  // Activation de la temporisation
+  //tempoActive = 1;
+  //tempoDepart = millis();
+  Serial.print("tempoActive = ");
+  Serial.println(tempoActive);
+  Serial.print("tempoDepart = ");
+  Serial.println(tempoDepart);
+  Serial.print("millis = ");
+  Serial.println(millis());
+  Serial.print("delta = ");
+  Serial.println(millis() - tempoDepart);  
   
-  // Allumer eteindre la LED
-  digitalWrite( ledPin, sensorValue );
-
-  mesure_temp_humidite();
-
   
-
-
+  // Si la temporisation est active,
+ //if ( tempoActive ) { 
+  // Et si il s'est écoulé 3 secondes,
+    if ( millis() - tempoDepart >= 3000 ) {
+      tempoDepart = millis();
+      mesure_temp_humidite();
+  // Et on désactive la temporisation pour ne pas afficher ce message une seconde fois
+      //tempoActive = 0; 
+    }
+  //} 
   
 }
