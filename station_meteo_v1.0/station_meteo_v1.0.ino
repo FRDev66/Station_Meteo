@@ -33,7 +33,7 @@
 #define BLYNK_PRINT Serial // Enables Serial Monitor
 
 //#include <BlynkSimpleEsp8266.h>
-//#include <BlynkSimpleEthernet.h>
+#include <BlynkSimpleEthernet.h>
 
 char auth[] = "c6JayOO89I5xFlpJ8BHxwYNOAsTj7uh_";
 
@@ -55,7 +55,7 @@ void setup(){
   pinMode( hallPin, INPUT );
 
   // Here your Arduino connects to the Blynk Cloud.
-  //Blynk.begin(auth);
+  Blynk.begin(auth);
 }
 
 void mesure_anemometre() {
@@ -103,7 +103,7 @@ void mesure_temp_humidite() {
 
 void loop() {
   // All the Blynk Magic happens here...
-  //Blynk.run();
+  Blynk.run();
   
   mesure_anemometre();
   
