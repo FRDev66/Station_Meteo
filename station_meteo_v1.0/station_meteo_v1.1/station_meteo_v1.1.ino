@@ -6,18 +6,25 @@
 #include <SimpleDHT.h>
 #define DHT_SENSOR_TYPE DHT_TYPE_11
 
-
 //#include <ESP8266WiFi.h>
 #include <ESP8266_Lib.h>
 //#include <BlynkSimpleEsp8266.h>
 #include <BlynkSimpleShieldEsp8266.h>
+//#include <SPI.h>
+//#include <WiFi.h>
+//#include <BlynkSimpleWifi.h>
 
-#define EspSerial Serial1
+//#define EspSerial Serial1
+//#define BLYNK_PRINT Serial1
 
-#define ESP8266_BAUD 115200
-ESP8266 wifi(&EspSerial);
+//#define ESP8266_BAUD 115200
+//ESP8266 wifi(&EspSerial);
+//ESP8266 wifi(&Serial);
 
-#define BLYNK_PRINT Serial // Enables Serial Monitor
+      //#define BLYNK_PRINT DebugSerial
+      //#include <BlynkSimpleStream.h>
+
+//#define BLYNK_PRINT Serial // Enables Serial Monitor
 char auth[] = BLYNK_AUTH_TOKEN;
 char ssid[] = "Livebox-1F90";
 char pass[] = "o3jwTuDzadcmQAtZ2r";
@@ -42,19 +49,21 @@ void setup(){
   pinMode( ledPin, OUTPUT ); 
   pinMode( hallPin, INPUT );
 
-  EspSerial.begin(ESP8266_BAUD);  
-  delay(10);
+  //EspSerial.begin(ESP8266_BAUD);  
+  Serial1.begin(115200);  
+  //delay(10);
 
-  Blynk.begin(auth, wifi, ssid, pass);
-
-  timer.setInterval(1000L, mesure_temp_humidite);
+  //Blynk.begin(auth, Serial1);
+        //   Blynk.config(auth);   
+    
+  //timer.setInterval(1000L, mesure_temp_humidite);
 }
 
 void mesure_anemometre() {
     // lecture du capteur a Effet Hall
   sensorValue = digitalRead( hallPin );
-  Serial.print("sensorValue = ");
-  Serial.println(sensorValue);
+  //Serial.print("sensorValue = ");
+  //Serial.println(sensorValue);
   
   // senseurValue = HIGH sans aimant
   // senseurValue = LOW quand POLE SUD aimant
@@ -62,7 +71,8 @@ void mesure_anemometre() {
   
   // Allumer eteindre la LED
   digitalWrite( ledPin, sensorValue );
-  //delay(2000);
+
+  //Blynk.virtualWrite(V4, sensorValue);
 }
 
 void mesure_temp_humidite() {
@@ -81,7 +91,7 @@ void mesure_temp_humidite() {
     Serial.print("Read DHT11 failed, err=");
     Serial.print(SimpleDHTErrCode(err));
     Serial.print(",");
-    Serial.println(SimpleDHTErrDuration(err)); //delay(1000);
+    Serial.println(SimpleDHTErrDuration(err));
     return;
   }
  
@@ -91,8 +101,8 @@ void mesure_temp_humidite() {
   Serial.print((int)humidity);
   Serial.println(" H");
 
-  Blynk.virtualWrite(V5, h);
-  Blynk.virtualWrite(V6, t);
+  //Blynk.virtualWrite(V5, h);
+  //Blynk.virtualWrite(V6, t);
     
 }
 
@@ -126,6 +136,21 @@ void loop() {
     }
   //} 
 
-  timer.run();
+  //timer.run();
+
+  //Serial.println("HELLO !!");
+
+   // read from port 1, send to port 0:  
+  if (Serial1.available()) {  
+   int inByte = Serial1.read();  
+   //Serial.print("Test Serial1");
+   //Serial.println(inByte);
+   Serial.write(inByte);  
+  }  
+  // read from port 0, send to port 1:  
+  if (Serial.available()) {  
+   int inByte = Serial.read();  
+   Serial1.write(inByte);  
+  }  
   
 }
