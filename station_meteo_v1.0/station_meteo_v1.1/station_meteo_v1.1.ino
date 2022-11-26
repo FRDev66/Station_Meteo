@@ -53,8 +53,7 @@ void setup(){
   Serial1.begin(115200);  
   //delay(10);
 
-  //Blynk.begin(auth, Serial1);
-        //   Blynk.config(auth);   
+  //Blynk.begin(auth, ssid, pass);
     
   //timer.setInterval(1000L, mesure_temp_humidite);
 }
