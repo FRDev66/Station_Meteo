@@ -136,22 +136,22 @@ void loop() {
   
   //mesure_anemometre();
 
-  getVitesseVent();
+  //getVitesseVent();
   
   // Si la temporisation est active,
   //if ( tempoActive ) { 
   // Et si il s'est écoulé 3 secondes,
   if ( millis() - tempoDepart >= 3000 ) {
     tempoDepart = millis();
-    //mesure_temp_humidite();
+    mesure_temp_humidite();
   // Et on désactive la temporisation pour ne pas afficher ce message une seconde fois
     //tempoActive = 0; 
   }
 
-  if (millis() - tempoDepart >= 1000){
-    tempoDepart = millis();
-    getVitesseVent();    
-  }
+  //if (millis() - tempoDepart >= 1000){
+  //  tempoDepart = millis();
+  //  getVitesseVent();    
+  //}
 
 }
 
