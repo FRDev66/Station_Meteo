@@ -1,3 +1,13 @@
+// ##############################################
+// Version : v1.1.0_rc2
+// Auteur : FRDev66
+// Date : 14/12/2022
+//
+// Modification : 
+// * fonctionnalité permettant de transmettre à l'Application que le dispositif est connecté
+//
+// ##############################################
+
 #define BLYNK_TEMPLATE_ID           "TMPLvMXPVYpR"
 #define BLYNK_DEVICE_NAME           "Meteo"
 #define BLYNK_AUTH_TOKEN            "e4Ra7py3GsW9pAvPpFUZwiwB17pZIYHJ"
@@ -144,6 +154,7 @@ void loop() {
   if ( millis() - tempoDepart >= 3000 ) {
     tempoDepart = millis();
     mesure_temp_humidite();
+    statusConnexion();
   // Et on désactive la temporisation pour ne pas afficher ce message une seconde fois
     //tempoActive = 0; 
   }
@@ -153,5 +164,12 @@ void loop() {
   //  getVitesseVent();    
   //}
 
+}
+
+void statusConnexion() {
+  // Récupération de la force du signal WiFi en dBm
+  int rssi = WiFi.RSSI();
+  // Envoi de la Force du signal vers la Broche Virtuelle V1
+  Blynk.virtualWrite(V1,rssi);
 }
 
