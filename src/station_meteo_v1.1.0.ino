@@ -15,6 +15,7 @@
 #include <SimpleDHT.h>
 #include <ESP8266WiFi.h>
 #include <BlynkSimpleEsp8266.h>
+#include <Adafruit_Sensor.h>
 
 #define DHT_SENSOR_TYPE DHT_TYPE_11
 #define BLYNK_PRINT Serial
@@ -89,8 +90,8 @@ void mesure_temp_humidite() {
   // read without samples.
   byte temperature = 0;
   byte humidity = 0;
-  float t = (float)temperature;
-  float h = (float)humidity;  
+  //float t = (float)temperature;
+  //float h = (float)humidity;  
   
   int err = SimpleDHTErrSuccess;
   if ((err = dht11.read(&temperature, &humidity, NULL)) != SimpleDHTErrSuccess) {
@@ -169,6 +170,9 @@ void loop() {
 void statusConnexion() {
   // Récupération de la force du signal WiFi en dBm
   int rssi = WiFi.RSSI();
+  // Affiche le RSSI
+  Serial.print("Force du Signal");
+  Serial.println(rssi);
   // Envoi de la Force du signal vers la Broche Virtuelle V1
   Blynk.virtualWrite(V1,rssi);
 }
