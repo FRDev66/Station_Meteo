@@ -1,3 +1,19 @@
+//###############################################
+//## 
+//## Version : v1.1.0-rc3
+//## Date : 26/12/2022
+//## Auteur : FRDev66
+//## 
+//## Modifications : 
+//## Initialisation de la Release RC3 :
+//## - Remplacement du Capteur DHT11 par un Capteur EMP280
+//## Objectif(s) : 
+//## - Permettre d'utiliser le Module en Extérieur 
+//## -- pour prise en compte des Mesures Température <0
+//## - Intégration des Données de Pression Atmosphérique
+//##
+//###############################################
+
 #define BLYNK_TEMPLATE_ID           "TMPLvMXPVYpR"
 #define BLYNK_DEVICE_NAME           "Meteo"
 #define BLYNK_AUTH_TOKEN            "e4Ra7py3GsW9pAvPpFUZwiwB17pZIYHJ"
