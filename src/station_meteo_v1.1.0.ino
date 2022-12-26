@@ -25,10 +25,6 @@
 #define DHT_SENSOR_TYPE DHT_TYPE_11
 #define BLYNK_PRINT Serial
 
-#define PI 3.1415926535897932384626433832795
-#define vitessems_topic "anemometre/vitesseVentMS"        // Topic Vitesse du vent (en m/s)
-#define vitessekmh_topic "anemometre/vitesseVentKMH"      // Topic Vitesse du vent (en km/h)
-
 
 //#define BLYNK_PRINT Serial // Enables Serial Monitor
 char auth[] = BLYNK_AUTH_TOKEN;
@@ -42,14 +38,7 @@ SimpleDHT11 dht11(DHT_SENSOR_PIN);
 
 int sensorValue;
 
-volatile int rpmcount = 0;
-volatile float vitVentMS = 0;
-volatile float vitVentKMH = 0;
-int rpm = 0;
 unsigned long lastmillis = 0;
-
-int dureeMesVitVent = 5000; // en ms, durée de mesure de la vitesse du vent. 
-//Choisir un multiple de 1000 pour le calcul de la vitesse du vent
 
 int tempoActive = 0;
 // Temps à l'activation de la tempo
@@ -67,25 +56,6 @@ void setup() {
   Blynk.begin(auth, ssid, pass);
 }
 
-void mesure_anemometre() {
-    // lecture du capteur a Effet Hall
-  sensorValue = digitalRead( hallPin );
-  Serial.print("sensorValue = ");
-  Serial.println(sensorValue);
-  sensorValue = not( sensorValue );
-
-  digitalWrite( ledPin, sensorValue );
-
-  rpmcount = pulseIn(hallPin, HIGH); //Enregistrement de temps entre deux passage(période).
-  Serial.print("Periode:");              //Affichage du temps de passage sur la voie série.
-  Serial.println(rpmcount);
-
-  Serial.print("Vitesse:");              //Affichage de la vitesse.
-  Serial.print(2 * PI * 0.08 * pow(10, 6) / rpmcount); // V=2.3,14.F(N).R.N  ( F(N)= fonction d'étalonage R= rayon N= nombre de tours par seconde).
-  Serial.println(" M/S ");
-
-  //rpm_vent();
-}
 
 void mesure_temp_humidite() {
  // start working...
@@ -118,41 +88,9 @@ void mesure_temp_humidite() {
     
 }
 
-void getVitesseVent() {
-    //detachInterrupt(hallPin); 
-    mesure_anemometre();
-    //rpm = rpmcount * ( 60 / ( dureeMesVitVent / 1000 ) ); 
-    //Serial.println(rpm);
-    
-    if ( rpmcount > 0 ) {
-      //vitVentKMH = ( rpmcount + 6.174 ) / 8.367;
-      //vitVentMS = ( ( ( rpm + 6.174 ) / 8.367 ) * 1000 ) / 3600; 
-      vitVentMS = 2*PI*0.08*rpmcount;      
-    } else {
-      vitVentKMH = 0;
-      vitVentMS = 0;
-    }
-    Serial.println("Vitesse (m/s) : ");
-    Serial.println(vitVentMS);
-
-    rpmcount = 0;           // Redémarre le compte tour
-    lastmillis = millis();  // et réinitialise le chrono
-    //attachInterrupt(hallPin, rpm_vent, FALLING); // Rélance l'interruption du compte tour
-}
-
-void rpm_vent() { 
-  Serial.println("Tour = ");
-  rpmcount++;
-  Serial.println(rpmcount);
-}
-
 void loop() {
   Blynk.run();
   // put your main code here, to run repeatedly:
-  
-  //mesure_anemometre();
-
-  //getVitesseVent();
   
   // Si la temporisation est active,
   //if ( tempoActive ) { 
@@ -164,10 +102,6 @@ void loop() {
     //tempoActive = 0; 
   }
 
-  //if (millis() - tempoDepart >= 1000){
-  //  tempoDepart = millis();
-  //  getVitesseVent();    
-  //}
 
 }
 
