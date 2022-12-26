@@ -21,7 +21,8 @@
 #include <SimpleDHT.h>
 #include <ESP8266WiFi.h>
 #include <BlynkSimpleEsp8266.h>
-#include <Adafruit.BME280.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME280.h>
 
 #define DHT_SENSOR_TYPE DHT_TYPE_11
 #define BLYNK_PRINT Serial
