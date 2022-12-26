@@ -18,7 +18,7 @@
 #define BLYNK_DEVICE_NAME           "Meteo"
 #define BLYNK_AUTH_TOKEN            "e4Ra7py3GsW9pAvPpFUZwiwB17pZIYHJ"
 
-#include <SimpleDHT.h>
+//#include <SimpleDHT.h>
 #include <ESP8266WiFi.h>
 #include <BlynkSimpleEsp8266.h>
 #include <Adafruit_Sensor.h>
@@ -26,6 +26,7 @@
 
 #define DHT_SENSOR_TYPE DHT_TYPE_11
 #define BLYNK_PRINT Serial
+#define SEALEVELPRESSURE_HPA (990.28) // Définition de la pression vs altitude à 190m (990.28 hPa)
 
 
 //#define BLYNK_PRINT Serial // Enables Serial Monitor
@@ -35,8 +36,9 @@ char pass[] = "o3jwTuDzadcmQAtZ2r";
 
 const int ledPin = 4; 
 const int hallPin = 2;
-static const int DHT_SENSOR_PIN = 5;
-SimpleDHT11 dht11(DHT_SENSOR_PIN);
+//static const int DHT_SENSOR_PIN = 5;
+//SimpleDHT11 dht11(DHT_SENSOR_PIN);
+Adafruit_BME280 bme;
 
 int sensorValue;
 
@@ -55,11 +57,16 @@ void setup() {
   pinMode( ledPin, OUTPUT );
   pinMode( hallPin, INPUT );
 
+  if (!bme.begin(0x76)) {
+		Serial.println("Aucun capteur BME280 trouvé, vérifier le câblage !");
+		while (1);
+	}
+
   Blynk.begin(auth, ssid, pass);
 }
 
 
-void mesure_temp_humidite() {
+/* void mesure_temp_humidite() {
  // start working...
   Serial.println("=================================");
   Serial.println("Sample DHT11...");
@@ -88,6 +95,37 @@ void mesure_temp_humidite() {
   Blynk.virtualWrite(V6,temperature);
   Blynk.virtualWrite(V4,humidity);
     
+} */
+
+void mesure_bme280() {
+ // start working...
+  Serial.println("=================================");
+  Serial.println("Sample BME280...");
+  
+  // read without samples.
+  float temperature = bme.readTemperature();
+  float humidity = bme.readHumidity();
+  float pression = bme.readPressure();
+  float altitude = bme.readAltitude(SEALEVELPRESSURE_HPA);
+
+ 
+  Serial.print("Sample OK: ");
+  Serial.print(temperature);
+  Serial.print(" *C, "); 
+  Serial.print(humidity);
+  Serial.println(" H");
+  Serial.print(pression);
+  Serial.println(" hPa");
+  Serial.print("Approx. Altitude = ");
+  Serial.print(altitude);
+  Serial.println("m");
+
+  Blynk.virtualWrite(V6,temperature);
+  Blynk.virtualWrite(V4,humidity);
+  Blynk.virtualWrite(V5,pression);
+  Blynk.virtualWrite(V7,altitude);
+
+    
 }
 
 void loop() {
@@ -99,7 +137,8 @@ void loop() {
   // Et si il s'est écoulé 3 secondes,
   if ( millis() - tempoDepart >= 3000 ) {
     tempoDepart = millis();
-    mesure_temp_humidite();
+    //mesure_temp_humidite();
+    mesure_bme280();
   // Et on désactive la temporisation pour ne pas afficher ce message une seconde fois
     //tempoActive = 0; 
   }
