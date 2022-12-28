@@ -23,6 +23,7 @@
 #include <BlynkSimpleEsp8266.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
+#include <Wire.h>  
 
 #define DHT_SENSOR_TYPE DHT_TYPE_11
 #define BLYNK_PRINT Serial
@@ -46,6 +47,8 @@ int sensorValue;
 
 unsigned long lastmillis = 0;
 
+byte nombreDePeripheriquesTrouves = 0;
+
 int tempoActive = 0;
 // Temps à l'activation de la tempo
 unsigned long tempoDepart = 0;
@@ -53,6 +56,46 @@ unsigned long tempoDepart = 0;
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
+
+  Serial.println("                                    ~~ SCANNER I2C ~~                                       ");
+  Serial.println("Scanne toutes les adresses i2c, afin de repérer tous les périphériques connectés à l'arduino");
+  Serial.println("============================================================================================");
+  Serial.println();
+
+  // Initialisation de la liaison i2C
+  Wire.begin();
+
+  // Boucle de parcous des 127 adresses i2c possibles
+  for (byte adresseI2C = 0; adresseI2C < 127; adresseI2C++)
+  {
+    Wire.beginTransmission(adresseI2C);             // Interrogation de l'adresse i2c ciblée
+    if (Wire.endTransmission () == 0)               // Si cela s'est bien passé, c'est qu'il y a un périphérique connecté à cette adresse
+    {
+      Serial.print("Périphérique i2c trouvé à l'adresse : ");
+      Serial.print(adresseI2C, DEC);                // On affiche son adresse au format décimal
+      Serial.print(" (0x");
+      Serial.print(adresseI2C, HEX);                // … ainsi qu'au format hexadécimal (0x..)
+      Serial.println(")");
+      
+      nombreDePeripheriquesTrouves++;
+      delay(1);                                     // Temporisation, avant de passer au scan de l'adresse suivante
+    }
+  }
+
+  // Affichage final, indiquant le nombre total de périphériques trouvés sur le port I2C de l'arduino
+  if (nombreDePeripheriquesTrouves == 0) {
+    Serial.println("Aucun périphérique I2C trouvé…");
+  }
+  else if (nombreDePeripheriquesTrouves == 1) {
+    Serial.println();
+    Serial.println("1 périphérique trouvé !");
+  }
+  else {
+    Serial.println();
+    Serial.print(nombreDePeripheriquesTrouves);
+    Serial.println("périphériques trouvés !");
+  }
+  Serial.println("Scan terminé.");  
 
   //attachInterrupt(hallPin, rpm_vent, FALLING);
   
@@ -65,14 +108,14 @@ void setup() {
 	//}
 
   // Initialisation du BME280
-  Serial.print(F("Initialisation du BME280, à l'adresse [0x"));
+  Serial.print("Initialisation du BME280, à l'adresse [0x");
   Serial.print(adresseI2CduBME280, HEX);
-  Serial.println(F("]"));
+  Serial.println("]");
   
   if(!bme.begin(adresseI2CduBME280)) {
-    Serial.println(F("--> ÉCHEC…"));
+    Serial.println("--> ÉCHEC…");
   } else {
-    Serial.println(F("--> RÉUSSIE !"));
+    Serial.println("--> RÉUSSIE !");
   }
   Serial.println();
 
