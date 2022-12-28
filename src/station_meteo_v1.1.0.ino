@@ -28,6 +28,8 @@
 #define BLYNK_PRINT Serial
 #define SEALEVELPRESSURE_HPA (990.28) // Définition de la pression vs altitude à 190m (990.28 hPa)
 
+#define adresseI2CduBME280 0x76
+
 
 //#define BLYNK_PRINT Serial // Enables Serial Monitor
 char auth[] = BLYNK_AUTH_TOKEN;
@@ -57,10 +59,22 @@ void setup() {
   pinMode( ledPin, OUTPUT );
   pinMode( hallPin, INPUT );
 
-  if (!bme.begin(0x76)) {
-		Serial.println("Aucun capteur BME280 trouvé, vérifier le câblage !");
-		while (1);
-	}
+  //if (!bme.begin(0x77)) {
+	//	Serial.println("Aucun capteur BME280 trouvé, vérifier le câblage !");
+	//	while (1);
+	//}
+
+  // Initialisation du BME280
+  Serial.print(F("Initialisation du BME280, à l'adresse [0x"));
+  Serial.print(adresseI2CduBME280, HEX);
+  Serial.println(F("]"));
+  
+  if(!bme.begin(adresseI2CduBME280)) {
+    Serial.println(F("--> ÉCHEC…"));
+  } else {
+    Serial.println(F("--> RÉUSSIE !"));
+  }
+  Serial.println();
 
   Blynk.begin(auth, ssid, pass);
 }
