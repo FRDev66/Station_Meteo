@@ -15,11 +15,11 @@ byte nombreDePeripheriquesTrouves = 0;    // Variable indiquant combien de péri
 // ========================
 void setup() {
 
-  // Initialisation de la liaison série, côté PC (pour y faire afficher des infos, via le moniteur série de l'IDE Arduino)
+  // Initialisation de la liaison série, côté PC (pour y faire afficher des infos, via le moniteur série de IDE Arduino)
   Serial.begin(9600);
-  Serial.println(F("                                    ~~ SCANNER I2C ~~                                       "));
-  Serial.println(F("Scanne toutes les adresses i2c, afin de repérer tous les périphériques connectés à l'arduino"));
-  Serial.println(F("============================================================================================"));
+  Serial.println("                                    ~~ SCANNER I2C ~~                                       ");
+  Serial.println("Scanne toutes les adresses i2c, afin de repérer tous les périphériques connectés à l'arduino");
+  Serial.println("============================================================================================");
   Serial.println();
 
   // Initialisation de la liaison i2C
