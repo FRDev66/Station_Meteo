@@ -102,10 +102,10 @@ void setup() {
   pinMode( ledPin, OUTPUT );
   pinMode( hallPin, INPUT );
 
-  //if (!bme.begin(0x77)) {
-	//	Serial.println("Aucun capteur BME280 trouvé, vérifier le câblage !");
-	//	while (1);
-	//}
+  /*if (!bme.begin(0x77)) {
+		Serial.println("Aucun capteur BME280 trouvé, vérifier le câblage !");
+		while (1);
+	}*/
 
   // Initialisation du BME280
   Serial.print("Initialisation du BME280, à l'adresse [0x");
