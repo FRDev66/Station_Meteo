@@ -1,3 +1,13 @@
+// ##############################################
+// Version : v1.1.0_rc2
+// Auteur : FRDev66
+// Date : 14/12/2022
+//
+// Modification : 
+// * fonctionnalité permettant de transmettre à l'Application que le dispositif est connecté
+//
+// ##############################################
+
 #define BLYNK_TEMPLATE_ID           "TMPLvMXPVYpR"
 #define BLYNK_DEVICE_NAME           "Meteo"
 #define BLYNK_AUTH_TOKEN            "e4Ra7py3GsW9pAvPpFUZwiwB17pZIYHJ"
@@ -5,6 +15,7 @@
 #include <SimpleDHT.h>
 #include <ESP8266WiFi.h>
 #include <BlynkSimpleEsp8266.h>
+#include <Adafruit_Sensor.h>
 
 #define DHT_SENSOR_TYPE DHT_TYPE_11
 #define BLYNK_PRINT Serial
@@ -79,8 +90,8 @@ void mesure_temp_humidite() {
   // read without samples.
   byte temperature = 0;
   byte humidity = 0;
-  float t = (float)temperature;
-  float h = (float)humidity;  
+  //float t = (float)temperature;
+  //float h = (float)humidity;  
   
   int err = SimpleDHTErrSuccess;
   if ((err = dht11.read(&temperature, &humidity, NULL)) != SimpleDHTErrSuccess) {
@@ -144,6 +155,7 @@ void loop() {
   if ( millis() - tempoDepart >= 3000 ) {
     tempoDepart = millis();
     mesure_temp_humidite();
+    statusConnexion();
   // Et on désactive la temporisation pour ne pas afficher ce message une seconde fois
     //tempoActive = 0; 
   }
@@ -153,5 +165,15 @@ void loop() {
   //  getVitesseVent();    
   //}
 
+}
+
+void statusConnexion() {
+  // Récupération de la force du signal WiFi en dBm
+  int rssi = WiFi.RSSI();
+  // Affiche le RSSI
+  Serial.print("Force du Signal");
+  Serial.println(rssi);
+  // Envoi de la Force du signal vers la Broche Virtuelle V1
+  Blynk.virtualWrite(V1,rssi);
 }
 
