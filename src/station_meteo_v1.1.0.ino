@@ -106,8 +106,9 @@ void loop() {
     //delay(delayTime);
 
   if ( millis() - tempoDepart >= 5000 ) {
-  tempoDepart = millis();
-  mesure_temp_humidite();
+    tempoDepart = millis();
+    mesure_temp_humidite();
+    statusConnexion();
   // Et on désactive la temporisation pour ne pas afficher ce message une seconde fois
   //tempoActive = 0; 
   }
@@ -142,4 +143,14 @@ void mesure_temp_humidite() {
   Blynk.virtualWrite(V4,humidity);
   Blynk.virtualWrite(V5,pression);
   Blynk.virtualWrite(V7,altitude);
+}
+
+void statusConnexion() {
+  // Récupération de la force du signal WiFi en dBm
+  int rssi = WiFi.RSSI();
+  // Affiche le RSSI
+  Serial.print("Force du Signal");
+  Serial.println(rssi);
+  // Envoi de la Force du signal vers la Broche Virtuelle V1
+  Blynk.virtualWrite(V1,rssi);
 }
