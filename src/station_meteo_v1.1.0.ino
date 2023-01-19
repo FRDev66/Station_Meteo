@@ -1,5 +1,5 @@
 // ##############################################
-// Version : v1.1.0_rc2
+// Version : v1.1.0_rc3
 // Auteur : FRDev66
 // Date : 14/12/2022
 //
@@ -7,164 +7,152 @@
 // * fonctionnalité permettant de transmettre à l'Application que le dispositif est connecté
 //
 // ##############################################
+/***************************************************************************
+  This is a library for the BME280 humidity, temperature & pressure sensor
+
+  Designed specifically to work with the Adafruit BME280 Breakout
+  ----> http://www.adafruit.com/products/2650
+
+  These sensors use I2C or SPI to communicate, 2 or 4 pins are required
+  to interface. The device's I2C address is either 0x76 or 0x77.
+
+  Adafruit invests time and resources providing this open source code,
+  please support Adafruit andopen-source hardware by purchasing products
+  from Adafruit!
+
+  Written by Limor Fried & Kevin Townsend for Adafruit Industries.
+  BSD license, all text above must be included in any redistribution
+  See the LICENSE file for details.
+ ***************************************************************************/
 
 #define BLYNK_TEMPLATE_ID           "TMPLvMXPVYpR"
 #define BLYNK_DEVICE_NAME           "Meteo"
 #define BLYNK_AUTH_TOKEN            "e4Ra7py3GsW9pAvPpFUZwiwB17pZIYHJ"
 
-#include <SimpleDHT.h>
+#include <Wire.h>
+#include <SPI.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME280.h>
 #include <ESP8266WiFi.h>
 #include <BlynkSimpleEsp8266.h>
 #include <Adafruit_Sensor.h>
 
-#define DHT_SENSOR_TYPE DHT_TYPE_11
 #define BLYNK_PRINT Serial
-
-#define PI 3.1415926535897932384626433832795
-#define vitessems_topic "anemometre/vitesseVentMS"        // Topic Vitesse du vent (en m/s)
-#define vitessekmh_topic "anemometre/vitesseVentKMH"      // Topic Vitesse du vent (en km/h)
-
 
 //#define BLYNK_PRINT Serial // Enables Serial Monitor
 char auth[] = BLYNK_AUTH_TOKEN;
 char ssid[] = "Livebox-1F90";
 char pass[] = "o3jwTuDzadcmQAtZ2r";
 
-const int ledPin = 4; 
-const int hallPin = 2;
-static const int DHT_SENSOR_PIN = 5;
-SimpleDHT11 dht11(DHT_SENSOR_PIN);
+// Constantes du programme
+#define adresseI2CduBME280 0x76              // Adresse I2C du BME280 (0x76, dans mon cas, ce qui est souvent la valeur par défaut)
+#define SEALEVELPRESSURE_HPA 1024.90         // https://fr.wikipedia.org/wiki/Pression_atmospherique (1013.25 hPa en moyenne, valeur "par défaut")
+#define delaiRafraichissementAffichage 1500  // Délai de rafraîchissement de l'affichage (en millisecondes)
 
-int sensorValue;
+Adafruit_BME280 bme; // I2C
+//Adafruit_BME280 bme(BME_CS); // hardware SPI
+//Adafruit_BME280 bme(BME_CS, BME_MOSI, BME_MISO, BME_SCK); // software SPI
 
-volatile int rpmcount = 0;
-volatile float vitVentMS = 0;
-volatile float vitVentKMH = 0;
-int rpm = 0;
-unsigned long lastmillis = 0;
+byte nombreDePeripheriquesTrouves = 0;    // Variable indiquant combien de périphériques I2C ont répondu "présent"
 
-int dureeMesVitVent = 5000; // en ms, durée de mesure de la vitesse du vent. 
-//Choisir un multiple de 1000 pour le calcul de la vitesse du vent
-
-int tempoActive = 0;
-// Temps à l'activation de la tempo
+//unsigned long delayTime;
 unsigned long tempoDepart = 0;
 
 void setup() {
-  // put your setup code here, to run once:
   Serial.begin(115200);
+  Serial.println(F("                                    ~~ SCANNER I2C ~~                                       "));
+  Serial.println(F("Scanne toutes les adresses i2c, afin de repérer tous les périphériques connectés à l'arduino"));
+  Serial.println(F("============================================================================================"));
+  Serial.println();
 
-  //attachInterrupt(hallPin, rpm_vent, FALLING);
-  
-  pinMode( ledPin, OUTPUT );
-  pinMode( hallPin, INPUT );
+  // Initialisation de la liaison i2C
+  Wire.begin();
+
+  // Boucle de parcous des 127 adresses i2c possibles
+  for (byte adresseI2C = 0; adresseI2C < 127; adresseI2C++)
+  {
+    Wire.beginTransmission(adresseI2C);             // Interrogation de l'adresse i2c ciblée
+    if (Wire.endTransmission () == 0)               // Si cela s'est bien passé, c'est qu'il y a un périphérique connecté à cette adresse
+    {
+      Serial.print(F("Périphérique i2c trouvé à l'adresse : "));
+      Serial.print(adresseI2C, DEC);                // On affiche son adresse au format décimal
+      Serial.print(F(" (0x"));
+      Serial.print(adresseI2C, HEX);                // … ainsi qu'au format hexadécimal (0x..)
+      Serial.println(F(")"));
+      
+      nombreDePeripheriquesTrouves++;
+      //delay(1);                                     // Temporisation, avant de passer au scan de l'adresse suivante
+    }
+  }
+
+  // Affichage final, indiquant le nombre total de périphériques trouvés sur le port I2C de l'arduino
+  if (nombreDePeripheriquesTrouves == 0) {
+    Serial.println(F("Aucun périphérique I2C trouvé…"));
+  }
+  else if (nombreDePeripheriquesTrouves == 1) {
+    Serial.println();
+    Serial.println(F("1 périphérique trouvé !"));
+  }
+  else {
+    Serial.println();
+    Serial.print(nombreDePeripheriquesTrouves);
+    Serial.println(F("périphériques trouvés !"));
+  }
+  Serial.println(F("Scan terminé."));  
+
+  if(!bme.begin(adresseI2CduBME280)) {
+    Serial.println(F("--> ÉCHEC…"));
+  } else {
+    Serial.println(F("--> RÉUSSIE !"));
+  }
+  Serial.println();
 
   Blynk.begin(auth, ssid, pass);
 }
 
-void mesure_anemometre() {
-    // lecture du capteur a Effet Hall
-  sensorValue = digitalRead( hallPin );
-  Serial.print("sensorValue = ");
-  Serial.println(sensorValue);
-  sensorValue = not( sensorValue );
 
-  digitalWrite( ledPin, sensorValue );
+void loop() { 
+    //printValues();
+    //delay(delayTime);
 
-  rpmcount = pulseIn(hallPin, HIGH); //Enregistrement de temps entre deux passage(période).
-  Serial.print("Periode:");              //Affichage du temps de passage sur la voie série.
-  Serial.println(rpmcount);
-
-  Serial.print("Vitesse:");              //Affichage de la vitesse.
-  Serial.print(2 * PI * 0.08 * pow(10, 6) / rpmcount); // V=2.3,14.F(N).R.N  ( F(N)= fonction d'étalonage R= rayon N= nombre de tours par seconde).
-  Serial.println(" M/S ");
-
-  //rpm_vent();
-}
-
-void mesure_temp_humidite() {
- // start working...
-  Serial.println("=================================");
-  Serial.println("Sample DHT11...");
-  
-  // read without samples.
-  byte temperature = 0;
-  byte humidity = 0;
-  //float t = (float)temperature;
-  //float h = (float)humidity;  
-  
-  int err = SimpleDHTErrSuccess;
-  if ((err = dht11.read(&temperature, &humidity, NULL)) != SimpleDHTErrSuccess) {
-    Serial.print("Read DHT11 failed, err=");
-    Serial.print(SimpleDHTErrCode(err));
-    Serial.print(",");
-    Serial.println(SimpleDHTErrDuration(err));
-    return;
-  }
- 
-  Serial.print("Sample OK: ");
-  Serial.print((int)temperature);
-  Serial.print(" *C, "); 
-  Serial.print((int)humidity);
-  Serial.println(" H");
-
-  Blynk.virtualWrite(V6,temperature);
-  Blynk.virtualWrite(V4,humidity);
-    
-}
-
-void getVitesseVent() {
-    //detachInterrupt(hallPin); 
-    mesure_anemometre();
-    //rpm = rpmcount * ( 60 / ( dureeMesVitVent / 1000 ) ); 
-    //Serial.println(rpm);
-    
-    if ( rpmcount > 0 ) {
-      //vitVentKMH = ( rpmcount + 6.174 ) / 8.367;
-      //vitVentMS = ( ( ( rpm + 6.174 ) / 8.367 ) * 1000 ) / 3600; 
-      vitVentMS = 2*PI*0.08*rpmcount;      
-    } else {
-      vitVentKMH = 0;
-      vitVentMS = 0;
-    }
-    Serial.println("Vitesse (m/s) : ");
-    Serial.println(vitVentMS);
-
-    rpmcount = 0;           // Redémarre le compte tour
-    lastmillis = millis();  // et réinitialise le chrono
-    //attachInterrupt(hallPin, rpm_vent, FALLING); // Rélance l'interruption du compte tour
-}
-
-void rpm_vent() { 
-  Serial.println("Tour = ");
-  rpmcount++;
-  Serial.println(rpmcount);
-}
-
-void loop() {
-  Blynk.run();
-  // put your main code here, to run repeatedly:
-  
-  //mesure_anemometre();
-
-  //getVitesseVent();
-  
-  // Si la temporisation est active,
-  //if ( tempoActive ) { 
-  // Et si il s'est écoulé 3 secondes,
-  if ( millis() - tempoDepart >= 3000 ) {
+  if ( millis() - tempoDepart >= 5000 ) {
     tempoDepart = millis();
     mesure_temp_humidite();
     statusConnexion();
   // Et on désactive la temporisation pour ne pas afficher ce message une seconde fois
-    //tempoActive = 0; 
+  //tempoActive = 0; 
   }
+}
 
-  //if (millis() - tempoDepart >= 1000){
-  //  tempoDepart = millis();
-  //  getVitesseVent();    
-  //}
 
+void mesure_temp_humidite() {
+  float temperature = bme.readTemperature();
+  float pression = bme.readPressure() / 100.0F;
+  float altitude = bme.readAltitude(SEALEVELPRESSURE_HPA);
+  float humidity = bme.readHumidity();
+  
+  Serial.print("Temperature = ");
+  Serial.print(temperature);
+  Serial.println(" °C");
+
+  Serial.print("Pression Atmospherique = ");
+  Serial.print(pression);
+  Serial.println(" hPa");
+
+  Serial.print("Approx. Altitude = ");
+  Serial.print(altitude);
+  Serial.println(" m");
+
+  Serial.print("Humidite = ");
+  Serial.print(humidity);
+  Serial.println(" %");
+
+  
+
+  Blynk.virtualWrite(V6,temperature);
+  Blynk.virtualWrite(V4,humidity);
+  Blynk.virtualWrite(V5,pression);
+  Blynk.virtualWrite(V7,altitude);
 }
 
 void statusConnexion() {
@@ -176,4 +164,3 @@ void statusConnexion() {
   // Envoi de la Force du signal vers la Broche Virtuelle V1
   Blynk.virtualWrite(V1,rssi);
 }
-
