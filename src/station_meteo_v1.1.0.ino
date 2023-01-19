@@ -1,10 +1,13 @@
 // ##############################################
-// Version : v1.1.0_rc3
+// Version rc : v1.1.0_rc3
+// Version Prod : v1.1
 // Auteur : FRDev66
-// Date : 14/12/2022
+// Date : 19/01/2023
 //
 // Modification : 
 // * fonctionnalité permettant de transmettre à l'Application que le dispositif est connecté
+// * ajustement des fonctionnalités définies
+// * finalsation de la temporalité des prises de mesures = 15 minutes
 //
 // ##############################################
 /***************************************************************************
@@ -115,7 +118,7 @@ void loop() {
     //printValues();
     //delay(delayTime);
 
-  if ( millis() - tempoDepart >= 5000 ) {
+  if ( millis() - tempoDepart >= 900000 ) { // 1 mesure toutes les 15 minutes
     tempoDepart = millis();
     mesure_temp_humidite();
     statusConnexion();
@@ -146,8 +149,6 @@ void mesure_temp_humidite() {
   Serial.print("Humidite = ");
   Serial.print(humidity);
   Serial.println(" %");
-
-  
 
   Blynk.virtualWrite(V6,temperature);
   Blynk.virtualWrite(V4,humidity);
