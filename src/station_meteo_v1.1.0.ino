@@ -58,7 +58,6 @@ byte nombreDePeripheriquesTrouves = 0;    // Variable indiquant combien de péri
 
 //unsigned long delayTime;
 unsigned long tempoDepart = 0;
-unsigned long tempoRebootWiFi = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -116,29 +115,17 @@ void setup() {
 
 
 void loop() { 
-    //printValues();
-    //delay(delayTime);
+    
+  bool result1 = Blynk.connect();
 
   //Mise en place de la fonction de Reboot Connexion WiFi
   if(!Blynk.connected()){
     Serial.println("Module NON CONNECTE !");
     Serial.print("Connexion en cours...");
-    Blynk.connect();
+    //Blynk.connectWiFi(ssid, pass);
   }
   else {
-/*   if(millis() - tempoRebootWiFi >= 120000) {
-    tempoRebootWiFi = millis();
-    Blynk.CONNECTED
-    Blynk.begin(auth, ssid, pass);
-    Serial.print("Reconnexion en cours.....");
-    statusConnexion();
-  } */
-  //else {
-  //  Serial.print("Connexion WiFi toujours en cours.....");
-  //  statusConnexion();
-  //}
-
-    if ( millis() - tempoDepart >= 10000 ) { // 1 mesure toutes les 15 minutes
+    if ( millis() - tempoDepart >= 120000 ) { // 1 mesure toutes les 15 minutes
       Serial.println("Connexion toujours en cours...");
       tempoDepart = millis();
       mesure_temp_humidite();
@@ -177,6 +164,7 @@ void mesure_temp_humidite() {
   Blynk.virtualWrite(V5,pression);
   Blynk.virtualWrite(V7,altitude);
 }
+
 
 void statusConnexion() {
   // Récupération de la force du signal WiFi en dBm
