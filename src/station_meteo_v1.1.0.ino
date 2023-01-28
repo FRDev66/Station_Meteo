@@ -1,13 +1,11 @@
 // ##############################################
-// Version rc : v1.1.0_rc3
+// Version rc : v1.1.0_BugFix#5
 // Version Prod : v1.1
 // Auteur : FRDev66
-// Date : 19/01/2023
+// Date : 28/01/2023
 //
 // Modification : 
-// * fonctionnalité permettant de transmettre à l'Application que le dispositif est connecté
-// * ajustement des fonctionnalités définies
-// * finalsation de la temporalité des prises de mesures = 15 minutes
+// * Intégration d'une solution de reboot de la connexion WiFi
 //
 // ##############################################
 /***************************************************************************
@@ -60,6 +58,7 @@ byte nombreDePeripheriquesTrouves = 0;    // Variable indiquant combien de péri
 
 //unsigned long delayTime;
 unsigned long tempoDepart = 0;
+unsigned long tempoRebootWiFi = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -121,9 +120,20 @@ void loop() {
   if ( millis() - tempoDepart >= 900000 ) { // 1 mesure toutes les 15 minutes
     tempoDepart = millis();
     mesure_temp_humidite();
-    statusConnexion();
+    //statusConnexion();
   // Et on désactive la temporisation pour ne pas afficher ce message une seconde fois
   //tempoActive = 0; 
+  //Mise en place de la fonction de Reboot Connexion WiFi
+    if(millis() - tempoRebootWiFi >= 50000) {
+      tempoRebootWiFi = millis();
+      Blynk.begin(auth, ssid, pass);
+      Serial.print("Reconnexion en cours.....");
+      statusConnexion();
+    }
+    else {
+      Serial.print("Connexion WiFi toujours en cours.....");
+      statusConnexion();
+    }
   }
 }
 
