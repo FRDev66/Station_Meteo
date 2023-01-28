@@ -109,7 +109,7 @@ void setup() {
   }
   Serial.println();
 
-  mesure_temp_humidite();
+  //mesure_temp_humidite();
 
   Blynk.begin(auth, ssid, pass);
 }
@@ -120,23 +120,32 @@ void loop() {
     //delay(delayTime);
 
   //Mise en place de la fonction de Reboot Connexion WiFi
-  if(millis() - tempoRebootWiFi >= 3600000) {
+  if(!Blynk.connected()){
+    Serial.println("Module NON CONNECTE !");
+    Serial.print("Connexion en cours...");
+    Blynk.connect();
+  }
+  else {
+/*   if(millis() - tempoRebootWiFi >= 120000) {
     tempoRebootWiFi = millis();
+    Blynk.CONNECTED
     Blynk.begin(auth, ssid, pass);
     Serial.print("Reconnexion en cours.....");
     statusConnexion();
-  }
+  } */
   //else {
   //  Serial.print("Connexion WiFi toujours en cours.....");
   //  statusConnexion();
   //}
 
-  if ( millis() - tempoDepart >= 900000 ) { // 1 mesure toutes les 15 minutes
-    tempoDepart = millis();
-    mesure_temp_humidite();
-    statusConnexion();
-  // Et on désactive la temporisation pour ne pas afficher ce message une seconde fois
-  //tempoActive = 0; 
+    if ( millis() - tempoDepart >= 10000 ) { // 1 mesure toutes les 15 minutes
+      Serial.println("Connexion toujours en cours...");
+      tempoDepart = millis();
+      mesure_temp_humidite();
+      statusConnexion();
+    // Et on désactive la temporisation pour ne pas afficher ce message une seconde fois
+    //tempoActive = 0; 
+    }
   }
 }
 
