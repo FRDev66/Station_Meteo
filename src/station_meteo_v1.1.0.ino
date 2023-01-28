@@ -116,8 +116,6 @@ void setup() {
 
 void loop() { 
     
-  bool result1 = Blynk.connect();
-
   //Mise en place de la fonction de Reboot Connexion WiFi
   if(!Blynk.connected()){
     Serial.println("Module NON CONNECTE !");
@@ -125,7 +123,7 @@ void loop() {
     //Blynk.connectWiFi(ssid, pass);
   }
   else {
-    if ( millis() - tempoDepart >= 120000 ) { // 1 mesure toutes les 15 minutes
+    if ( millis() - tempoDepart >= 60000 ) { // 1 mesure toutes les 15 minutes
       Serial.println("Connexion toujours en cours...");
       tempoDepart = millis();
       mesure_temp_humidite();
