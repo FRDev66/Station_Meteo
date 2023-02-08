@@ -59,8 +59,6 @@ byte nombreDePeripheriquesTrouves = 0;    // Variable indiquant combien de péri
 //unsigned long delayTime;
 unsigned long tempoDepart = 0;
 
-bool Connected2Blynk = false;
-
 void setup() {
   Serial.begin(115200);
   Serial.println(F("                                    ~~ SCANNER I2C ~~                                       "));
@@ -118,23 +116,24 @@ void setup() {
 
 void loop() { 
     
-  if ( millis() - tempoDepart >= 5000 ) {
-    CheckConnexionBlynk();
-    tempoDepart = millis();
-    mesure_temp_humidite();
+  //Mise en place de la fonction de Reboot Connexion WiFi
+  if(!Blynk.connected()){
+    Serial.println("Module NON CONNECTE !");
+    Serial.print("Connexion en cours...");
+    //Blynk.connectWiFi(ssid, pass);
+  }
+  else {
+    if ( millis() - tempoDepart >= 5000 ) { // 1 mesure toutes les 15 minutes
+      Serial.println("Connexion toujours en cours...");
+      tempoDepart = millis();
+      mesure_temp_humidite();
+      statusConnexion();
+    // Et on désactive la temporisation pour ne pas afficher ce message une seconde fois
+    //tempoActive = 0; 
+    }
   }
 }
 
-void CheckConnexionBlynk() {
-  Connected2Blynk = Blynk.connected();
-  if(!Connected2Blynk){
-    Serial.println("Connexion au Serveur Blynk KO !!");
-    ConnexionWiFi();  
-  }
-  else{
-    Serial.println("Toujours Connecté au Serveur Blynk !!");    
-  }
-}
 
 void mesure_temp_humidite() {
   float temperature = bme.readTemperature();
@@ -164,18 +163,6 @@ void mesure_temp_humidite() {
   Blynk.virtualWrite(V7,altitude);
 }
 
-void ConnexionWiFi() {
-  if(WiFi.status() == WL_CONNECTED){  
-    Serial.print("\nIP address: ");
-    Serial.println(WiFi.localIP()); 
-    statusConnexion();
-  }
-  else{
-    Serial.println("\nCheck Router ");
-    WiFi.begin(ssid, pass); 
-    Blynk.begin(auth, ssid, pass);  
-  }
-}
 
 void statusConnexion() {
   // Récupération de la force du signal WiFi en dBm
