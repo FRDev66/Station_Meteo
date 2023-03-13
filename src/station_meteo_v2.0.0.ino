@@ -1,11 +1,11 @@
 // ##############################################
-// Version rc : v1.1.0_BugFix#5
-// Version Prod : v1.1
+// Version rc : v2.0.0-rc1
+// Version Prod : v2.0.0
 // Auteur : FRDev66
-// Date : 28/01/2023
+// Date : 13/03/2023
 //
 // Modification : 
-// * Intégration d'une solution de reboot de la connexion WiFi
+// * Augmentation de l'intervalle de temps entre 2 mesures Statiques (Température / Humidité / pression)
 //
 // ##############################################
 /***************************************************************************
@@ -49,6 +49,7 @@ char pass[] = "o3jwTuDzadcmQAtZ2r";
 #define adresseI2CduBME280 0x76              // Adresse I2C du BME280 (0x76, dans mon cas, ce qui est souvent la valeur par défaut)
 #define SEALEVELPRESSURE_HPA 1024.90         // https://fr.wikipedia.org/wiki/Pression_atmospherique (1013.25 hPa en moyenne, valeur "par défaut")
 #define delaiRafraichissementAffichage 1500  // Délai de rafraîchissement de l'affichage (en millisecondes)
+#define tempoMesures 1800000 // Délai entre 2 Mesures Statiques (temp / humidité / presssion - en millisecondes - 30 minutes)
 
 Adafruit_BME280 bme; // I2C
 //Adafruit_BME280 bme(BME_CS); // hardware SPI
@@ -117,8 +118,10 @@ void setup() {
 
 
 void loop() { 
-    
-  if ( millis() - tempoDepart >= 5000 ) {
+  
+  // Toutes les 30 minutes ==> Lancer une phase de Mesures Statiques
+  if ( millis() - tempoDepart >= tempoMesures ) 
+  {
     CheckConnexionBlynk();
     tempoDepart = millis();
     mesure_temp_humidite();
