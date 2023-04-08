@@ -144,7 +144,8 @@ void CheckConnexionBlynk() {
     ConnexionWiFi();  
   }
   else{
-    Serial.println("Toujours Connecté au Serveur Blynk !!");    
+    Serial.println("Toujours Connecté au Serveur Blynk !!");
+    ConnexionWiFi();  
   }
 }
 
@@ -180,12 +181,14 @@ void ConnexionWiFi() {
   if(WiFi.status() == WL_CONNECTED){  
     Serial.print("\nIP address: ");
     Serial.println(WiFi.localIP()); 
+    Blynk.begin(auth, ssid, pass);
     statusConnexion();
   }
   else{
     Serial.println("\nCheck Router ");
     WiFi.begin(ssid, pass); 
-    Blynk.begin(auth, ssid, pass);  
+    Blynk.begin(auth, ssid, pass);
+    statusConnexion();  
   }
 }
 
