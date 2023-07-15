@@ -50,7 +50,7 @@ char pass[] = "o3jwTuDzadcmQAtZ2r";
 #define adresseI2CduBME280 0x76              // Adresse I2C du BME280 (0x76, dans mon cas, ce qui est souvent la valeur par défaut)
 #define SEALEVELPRESSURE_HPA 1024.90         // https://fr.wikipedia.org/wiki/Pression_atmospherique (1013.25 hPa en moyenne, valeur "par défaut")
 #define delaiRafraichissementAffichage 1500  // Délai de rafraîchissement de l'affichage (en millisecondes)
-#define tempoMesures 240000 // Délai entre 2 Mesures Statiques (temp / humidité / presssion - en millisecondes - 30 minutes)
+#define tempoMesures 180000 // Délai entre 2 Mesures Statiques (temp / humidité / presssion - en millisecondes - 30 minutes)
 
 
 Adafruit_BME280 bme; // I2C
@@ -131,9 +131,15 @@ void setup() {
 
 void loop() { 
   
+  //Serial.println("tempoDepart =");
+  //Serial.print(tempoDepart);
+
+  //CheckConnexionBlynk();
+
   // Toutes les 30 minutes ==> Lancer une phase de Mesures Statiques
   if ( millis() - tempoDepart >= tempoMesures ) 
   {
+    Blynk.connect();
     CheckConnexionBlynk();
     tempoDepart = millis();
     mesure_temp_humidite();
@@ -143,6 +149,10 @@ void loop() {
 
 void CheckConnexionBlynk() {
   Connected2Blynk = Blynk.connected();
+  
+  Serial.print("Check Connexion Blynk Cloud : ");
+  Serial.println(Connected2Blynk);
+
   if(!Connected2Blynk){
     Serial.println("Connexion au Serveur Blynk KO !!");
     ConnexionWiFi();  
