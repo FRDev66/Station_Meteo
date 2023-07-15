@@ -50,8 +50,8 @@ char pass[] = "o3jwTuDzadcmQAtZ2r";
 #define adresseI2CduBME280 0x76              // Adresse I2C du BME280 (0x76, dans mon cas, ce qui est souvent la valeur par défaut)
 #define SEALEVELPRESSURE_HPA 1024.90         // https://fr.wikipedia.org/wiki/Pression_atmospherique (1013.25 hPa en moyenne, valeur "par défaut")
 #define delaiRafraichissementAffichage 1500  // Délai de rafraîchissement de l'affichage (en millisecondes)
-//#define tempoMesures 1800000 // Délai entre 2 Mesures Statiques (temp / humidité / presssion - en millisecondes - 30 minutes)
-#define tempoMesures 60000
+#define tempoMesures 900000 // Délai entre 2 Mesures Statiques (temp / humidité / presssion - en millisecondes - 15 minutes)
+//#define tempoMesures 60000
 
 Adafruit_BME280 bme; // I2C
 //Adafruit_BME280 bme(BME_CS); // hardware SPI
