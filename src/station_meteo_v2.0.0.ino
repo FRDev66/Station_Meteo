@@ -39,7 +39,7 @@
 #include <Adafruit_Sensor.h>
 
 #define BLYNK_PRINT Serial
-#define BLYNK_HEARTBEAT 180
+//#define BLYNK_HEARTBEAT 180
 
 //#define BLYNK_PRINT Serial // Enables Serial Monitor
 char auth[] = BLYNK_AUTH_TOKEN;
@@ -72,6 +72,8 @@ int chargeBat;
 
 void setup() {
   Serial.begin(115200);
+
+  
   Serial.println(F("                                    ~~ SCANNER I2C ~~                                       "));
   Serial.println(F("Scanne toutes les adresses i2c, afin de repérer tous les périphériques connectés à l'arduino"));
   Serial.println(F("============================================================================================"));
