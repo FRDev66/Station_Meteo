@@ -50,7 +50,7 @@ char pass[] = "o3jwTuDzadcmQAtZ2r";
 #define adresseI2CduBME280 0x76              // Adresse I2C du BME280 (0x76, dans mon cas, ce qui est souvent la valeur par défaut)
 #define SEALEVELPRESSURE_HPA 1024.90         // https://fr.wikipedia.org/wiki/Pression_atmospherique (1013.25 hPa en moyenne, valeur "par défaut")
 #define delaiRafraichissementAffichage 1500  // Délai de rafraîchissement de l'affichage (en millisecondes)
-#define tempoMesures 240000 // Délai entre 2 Mesures Statiques (temp / humidité / presssion - en millisecondes - 30 minutes)
+#define tempoMesures 5000 // Délai entre 2 Mesures Statiques (temp / humidité / presssion - en millisecondes - 30 minutes) - par défaut = 240000
 
 
 Adafruit_BME280 bme; // I2C
@@ -73,6 +73,8 @@ int chargeBat;
 // Déclaration Variables pour la Fonction Anémomètre
 int pinAnometre = A0 ; // Connection au PIN A0
 int val = 0 ;
+float millivolt = 0;
+float vitesseKM = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -124,17 +126,15 @@ void setup() {
   Serial.println();
 
   // déclare le PIN raccordé à la Batterie Pôle POSITIF : A1
-  pinMode(A0, INPUT);
-  analogWrite(A0, LOW);
+  //pinMode(A0, INPUT);
+  //analogWrite(A0, LOW);
 
   Blynk.begin(auth, ssid, pass);
 }
 
 
 void loop() { 
-  val = analogRead(pinAnometre); // Lecture de la valeur de mesure <-- Anémomètre
-  Serial.print(val) ;
-  
+    
   // Toutes les 30 minutes ==> Lancer une phase de Mesures Statiques
   if ( millis() - tempoDepart >= tempoMesures ) 
   {
@@ -142,6 +142,8 @@ void loop() {
     tempoDepart = millis();
     mesure_temp_humidite();
     //ChargeBatterie();
+    mesure_vent();
+    
   }
 }
 
@@ -182,6 +184,18 @@ void mesure_temp_humidite() {
   Blynk.virtualWrite(V4,humidity);
   Blynk.virtualWrite(V5,pression);
   Blynk.virtualWrite(V7,altitude);
+}
+
+void mesure_vent() {
+  val = analogRead(pinAnometre); // Lecture de la valeur de mesure <-- Anémomètre
+  float millivolt = ((val)/1024)*3300;
+  float vitesseKM = (millivolt/1000)*50;
+  Serial.print("Mesure Anémomètre = ");
+  Serial.println(val) ;
+  Serial.print("millivolt = ");
+  Serial.println(millivolt);
+  Serial.print("Vitesse vent Km/h = ");
+  Serial.println(vitesseKM);
 }
 
 void ConnexionWiFi() {
