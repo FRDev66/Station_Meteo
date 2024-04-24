@@ -70,6 +70,10 @@ int data;
 float voltage;
 int chargeBat;
 
+// Déclaration Variables pour la Fonction Anémomètre
+int pinAnometre = A0 ; // Connection au PIN A0
+int val = 0 ;
+
 void setup() {
   Serial.begin(115200);
   Serial.println(F("                                    ~~ SCANNER I2C ~~                                       "));
@@ -128,6 +132,8 @@ void setup() {
 
 
 void loop() { 
+  val = analogRead(pinAnometre); // Lecture de la valeur de mesure <-- Anémomètre
+  Serial.print(val) ;
   
   // Toutes les 30 minutes ==> Lancer une phase de Mesures Statiques
   if ( millis() - tempoDepart >= tempoMesures ) 
