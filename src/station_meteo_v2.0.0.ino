@@ -188,7 +188,7 @@ void mesure_temp_humidite() {
 
 void mesure_vent() {
   val = analogRead(pinAnometre); // Lecture de la valeur de mesure <-- Anémomètre
-  float millivolt = ((val)/1024)*3300;
+  float millivolt = ((val-7)/1024.00)*3300.00;
   float vitesseKM = (millivolt/1000)*50;
   Serial.print("Mesure Anémomètre = ");
   Serial.println(val) ;
