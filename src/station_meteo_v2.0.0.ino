@@ -37,6 +37,7 @@
 #include <ESP8266WiFi.h>
 #include <BlynkSimpleEsp8266.h>
 #include <Adafruit_Sensor.h>
+#include <PubSubClient.h> //Librairie pour la gestion Mqtt 
 
 #define BLYNK_PRINT Serial
 #define BLYNK_HEARTBEAT 180
