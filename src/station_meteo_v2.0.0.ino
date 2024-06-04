@@ -2,10 +2,10 @@
 // Version rc : v2.0.0-rc1
 // Version Prod : v2.0.0
 // Auteur : FRDev66
-// Date : 13/03/2023
+// Date : 04/06/2024
 //
 // Modification : 
-// * Augmentation de l'intervalle de temps entre 2 mesures Statiques (Température / Humidité / pression)
+// * SM7 - Afficher Mesures Vitesse du Vent sur App Web
 //
 // ##############################################
 /***************************************************************************
@@ -160,6 +160,7 @@ void loop() {
     //ChargeBatterie();
     mesure_vent();
     //mqtt_publish("esp2/vitessevent",vitesseKM);
+    //mqtt_publish("esp2/temperatureExt",temperatureext);
 
   }
 }
@@ -177,13 +178,13 @@ void CheckConnexionBlynk() {
 
 
 void mesure_temp_humidite() {
-  float temperature = bme.readTemperature();
+  float temperatureext = bme.readTemperature();
   float pression = bme.readPressure() / 100.0F;
   float altitude = bme.readAltitude(SEALEVELPRESSURE_HPA);
-  float humidity = bme.readHumidity();
+  float humidityext = bme.readHumidity();
   
   Serial.print("Temperature = ");
-  Serial.print(temperature);
+  Serial.print(temperatureext);
   Serial.println(" °C");
 
   Serial.print("Pression Atmospherique = ");
@@ -195,16 +196,16 @@ void mesure_temp_humidite() {
   Serial.println(" m");
 
   Serial.print("Humidite = ");
-  Serial.print(humidity);
+  Serial.print(humidityext);
   Serial.println(" %");
 
-  Blynk.virtualWrite(V6,temperature);
-  Blynk.virtualWrite(V4,humidity);
+  Blynk.virtualWrite(V6,temperatureext);
+  Blynk.virtualWrite(V4,humidityext);
   Blynk.virtualWrite(V5,pression);
   Blynk.virtualWrite(V7,altitude);
 
-  mqtt_publish("esp2/temperatureExt",temperature);
-  mqtt_publish("esp2/humiditeExt",humidity);
+  mqtt_publish("esp2/temperatureExt",temperatureext);
+  mqtt_publish("esp2/humiditeExt",humidityext);
   mqtt_publish("esp2/pressionExt",pression);
   mqtt_publish("esp2/altitudeExt",altitude);
 }
@@ -314,6 +315,7 @@ void mqtt_publish(String topic, float t) {
   String t_str = String(t);
   t_str.toCharArray(t_char, t_str.length() + 1);
   client.publish(top,t_char);
+  
   Serial.print("topic = ");
   Serial.println(top);
   Serial.print("valeur topic MQTT = ");
