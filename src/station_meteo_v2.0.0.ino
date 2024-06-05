@@ -40,7 +40,7 @@
 #include <PubSubClient.h> //Librairie pour la gestion Mqtt 
 
 #define BLYNK_PRINT Serial
-#define BLYNK_HEARTBEAT 180
+#define BLYNK_HEARTBEAT 45
 
 //#define BLYNK_PRINT Serial // Enables Serial Monitor
 char auth[] = BLYNK_AUTH_TOKEN;
@@ -51,7 +51,7 @@ char pass[] = "o3jwTuDzadcmQAtZ2r";
 #define adresseI2CduBME280 0x76              // Adresse I2C du BME280 (0x76, dans mon cas, ce qui est souvent la valeur par défaut)
 #define SEALEVELPRESSURE_HPA 1024.90         // https://fr.wikipedia.org/wiki/Pression_atmospherique (1013.25 hPa en moyenne, valeur "par défaut")
 #define delaiRafraichissementAffichage 1500  // Délai de rafraîchissement de l'affichage (en millisecondes)
-#define tempoMesures 5000 // Délai entre 2 Mesures Statiques (temp / humidité / presssion - en millisecondes - 30 minutes) - par défaut = 240000
+#define tempoMesures 900000 // Délai entre 2 Mesures Statiques (temp / humidité / presssion - en millisecondes - 30 minutes) - par défaut = 240000
 
 
 Adafruit_BME280 bme; // I2C
@@ -142,25 +142,27 @@ void setup() {
   Blynk.begin(auth, ssid, pass);
 
   setup_mqtt();
-  client.publish("esp2/test", "Hello from ESP8266_EXT1");
+  client.publish("esp2/init", "Hello from ESP8266_EXT1");
 }
 
 
 void loop() { 
   
-  //reconnect();
   client.loop();
 
   // Toutes les 30 minutes ==> Lancer une phase de Mesures Statiques
   if ( millis() - tempoDepart >= tempoMesures ) 
   {
     CheckConnexionBlynk();
-    tempoDepart = millis();
+    
+    //tempoDepart = millis();
     mesure_temp_humidite();
     //ChargeBatterie();
     mesure_vent();
+    
     //mqtt_publish("esp2/vitessevent",vitesseKM);
     //mqtt_publish("esp2/temperatureExt",temperatureext);
+    tempoDepart = millis();
 
   }
 }
@@ -205,6 +207,7 @@ void mesure_temp_humidite() {
   Blynk.virtualWrite(V7,altitude);
 
   mqtt_publish("esp2/temperatureExt",temperatureext);
+  //client.publish("esp2/temperatureExt",temperatureext);
   mqtt_publish("esp2/humiditeExt",humidityext);
   mqtt_publish("esp2/pressionExt",pression);
   mqtt_publish("esp2/altitudeExt",altitude);
@@ -295,7 +298,7 @@ void setup_mqtt() {
 void reconnect() {
   while (!client.connected()) {
     Serial.println("Connection au serveur MQTT ...");
-    if (client.connect("ESPClient", MQTT_USERNAME, MQTT_KEY)) {
+    if (client.connect("ESPClientExterieur", MQTT_USERNAME, MQTT_KEY)) {
       Serial.println("MQTT connecté");
     }
     else {
@@ -305,6 +308,7 @@ void reconnect() {
     delay(2000);
     }
   }
+  //client.subscribe("esp2/temperatureExt"); //souscription au topic du esp2
 }
 
 //Fonction pour publier un float sur un topic
