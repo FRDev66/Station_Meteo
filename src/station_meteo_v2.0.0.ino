@@ -42,6 +42,8 @@
 #define BLYNK_PRINT Serial
 #define BLYNK_HEARTBEAT 45
 
+
+
 //#define BLYNK_PRINT Serial // Enables Serial Monitor
 char auth[] = BLYNK_AUTH_TOKEN;
 char ssid[] = "Livebox-1F90";
@@ -88,6 +90,8 @@ PubSubClient client(espClient2);
 
 void setup() {
   Serial.begin(115200);
+
+  
   Serial.println(F("                                    ~~ SCANNER I2C ~~                                       "));
   Serial.println(F("Scanne toutes les adresses i2c, afin de repérer tous les périphériques connectés à l'arduino"));
   Serial.println(F("============================================================================================"));
@@ -148,27 +152,36 @@ void setup() {
 
 void loop() { 
   
+
   client.loop();
+
 
   // Toutes les 30 minutes ==> Lancer une phase de Mesures Statiques
   if ( millis() - tempoDepart >= tempoMesures ) 
   {
+    Blynk.connect();
     CheckConnexionBlynk();
     
     //tempoDepart = millis();
     mesure_temp_humidite();
     //ChargeBatterie();
+
     mesure_vent();
     
     //mqtt_publish("esp2/vitessevent",vitesseKM);
     //mqtt_publish("esp2/temperatureExt",temperatureext);
     tempoDepart = millis();
 
+
   }
 }
 
 void CheckConnexionBlynk() {
   Connected2Blynk = Blynk.connected();
+  
+  Serial.print("Check Connexion Blynk Cloud : ");
+  Serial.println(Connected2Blynk);
+
   if(!Connected2Blynk){
     Serial.println("Connexion au Serveur Blynk KO !!");
     ConnexionWiFi();  
