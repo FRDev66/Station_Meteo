@@ -2,10 +2,10 @@
 // Version rc : v2.0.0-rc1
 // Version Prod : v2.0.0
 // Auteur : FRDev66
-// Date : 13/03/2023
+// Date : 04/06/2024
 //
 // Modification : 
-// * Augmentation de l'intervalle de temps entre 2 mesures Statiques (Température / Humidité / pression)
+// * SM7 - Afficher Mesures Vitesse du Vent sur App Web
 //
 // ##############################################
 /***************************************************************************
@@ -37,9 +37,10 @@
 #include <ESP8266WiFi.h>
 #include <BlynkSimpleEsp8266.h>
 #include <Adafruit_Sensor.h>
+#include <PubSubClient.h> //Librairie pour la gestion Mqtt 
 
 #define BLYNK_PRINT Serial
-#define BLYNK_HEARTBEAT 180
+#define BLYNK_HEARTBEAT 45
 
 //#define BLYNK_PRINT Serial // Enables Serial Monitor
 char auth[] = BLYNK_AUTH_TOKEN;
@@ -50,7 +51,7 @@ char pass[] = "o3jwTuDzadcmQAtZ2r";
 #define adresseI2CduBME280 0x76              // Adresse I2C du BME280 (0x76, dans mon cas, ce qui est souvent la valeur par défaut)
 #define SEALEVELPRESSURE_HPA 1024.90         // https://fr.wikipedia.org/wiki/Pression_atmospherique (1013.25 hPa en moyenne, valeur "par défaut")
 #define delaiRafraichissementAffichage 1500  // Délai de rafraîchissement de l'affichage (en millisecondes)
-#define tempoMesures 5000 // Délai entre 2 Mesures Statiques (temp / humidité / presssion - en millisecondes - 30 minutes) - par défaut = 240000
+#define tempoMesures 900000 // Délai entre 2 Mesures Statiques (temp / humidité / presssion - en millisecondes - 30 minutes) - par défaut = 240000
 
 
 Adafruit_BME280 bme; // I2C
@@ -75,6 +76,15 @@ int pinAnometre = A0 ; // Connection au PIN A0
 int val = 0 ;
 float millivolt = 0;
 float vitesseKM = 0;
+
+// MQTT Broker  
+#define MQTT_BROKER       "192.168.1.61"
+#define MQTT_BROKER_PORT  1883
+#define MQTT_USERNAME     "frdev66"
+#define MQTT_KEY          "Lenems66!!"
+
+WiFiClient espClient2;            // Use this for WiFi instead of EthernetClient
+PubSubClient client(espClient2);
 
 void setup() {
   Serial.begin(115200);
@@ -130,20 +140,30 @@ void setup() {
   //analogWrite(A0, LOW);
 
   Blynk.begin(auth, ssid, pass);
+
+  setup_mqtt();
+  client.publish("esp2/init", "Hello from ESP8266_EXT1");
 }
 
 
 void loop() { 
-    
+  
+  client.loop();
+
   // Toutes les 30 minutes ==> Lancer une phase de Mesures Statiques
   if ( millis() - tempoDepart >= tempoMesures ) 
   {
     CheckConnexionBlynk();
-    tempoDepart = millis();
+    
+    //tempoDepart = millis();
     mesure_temp_humidite();
     //ChargeBatterie();
     mesure_vent();
     
+    //mqtt_publish("esp2/vitessevent",vitesseKM);
+    //mqtt_publish("esp2/temperatureExt",temperatureext);
+    tempoDepart = millis();
+
   }
 }
 
@@ -158,14 +178,15 @@ void CheckConnexionBlynk() {
   }
 }
 
+
 void mesure_temp_humidite() {
-  float temperature = bme.readTemperature();
+  float temperatureext = bme.readTemperature();
   float pression = bme.readPressure() / 100.0F;
   float altitude = bme.readAltitude(SEALEVELPRESSURE_HPA);
-  float humidity = bme.readHumidity();
+  float humidityext = bme.readHumidity();
   
   Serial.print("Temperature = ");
-  Serial.print(temperature);
+  Serial.print(temperatureext);
   Serial.println(" °C");
 
   Serial.print("Pression Atmospherique = ");
@@ -177,13 +198,19 @@ void mesure_temp_humidite() {
   Serial.println(" m");
 
   Serial.print("Humidite = ");
-  Serial.print(humidity);
+  Serial.print(humidityext);
   Serial.println(" %");
 
-  Blynk.virtualWrite(V6,temperature);
-  Blynk.virtualWrite(V4,humidity);
+  Blynk.virtualWrite(V6,temperatureext);
+  Blynk.virtualWrite(V4,humidityext);
   Blynk.virtualWrite(V5,pression);
   Blynk.virtualWrite(V7,altitude);
+
+  mqtt_publish("esp2/temperatureExt",temperatureext);
+  //client.publish("esp2/temperatureExt",temperatureext);
+  mqtt_publish("esp2/humiditeExt",humidityext);
+  mqtt_publish("esp2/pressionExt",pression);
+  mqtt_publish("esp2/altitudeExt",altitude);
 }
 
 void mesure_vent() {
@@ -196,6 +223,8 @@ void mesure_vent() {
   Serial.println(millivolt);
   Serial.print("Vitesse vent Km/h = ");
   Serial.println(vitesseKM);
+
+  mqtt_publish("esp2/vitessevent",vitesseKM);
 }
 
 void ConnexionWiFi() {
@@ -259,4 +288,41 @@ void ChargeBatterie() {
    Blynk.virtualWrite(V2,chargeBat);
 
    //delay(1000);  
+}
+
+void setup_mqtt() {
+  client.setServer(MQTT_BROKER, MQTT_BROKER_PORT);
+  reconnect();
+}
+
+void reconnect() {
+  while (!client.connected()) {
+    Serial.println("Connection au serveur MQTT ...");
+    if (client.connect("ESPClientExterieur", MQTT_USERNAME, MQTT_KEY)) {
+      Serial.println("MQTT connecté");
+    }
+    else {
+      Serial.print("echec, code erreur= ");
+      Serial.println(client.state());
+      Serial.println("nouvel essai dans 2s");
+    delay(2000);
+    }
+  }
+  //client.subscribe("esp2/temperatureExt"); //souscription au topic du esp2
+}
+
+//Fonction pour publier un float sur un topic
+void mqtt_publish(String topic, float t) {
+  char top[topic.length()+1];
+  topic.toCharArray(top,topic.length()+1);
+  char t_char[50];
+  String t_str = String(t);
+  t_str.toCharArray(t_char, t_str.length() + 1);
+  client.publish(top,t_char);
+  
+  Serial.print("topic = ");
+  Serial.println(top);
+  Serial.print("valeur topic MQTT = ");
+  Serial.println(t);
+  Serial.println(t_char);
 }
