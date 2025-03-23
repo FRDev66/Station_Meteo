@@ -179,7 +179,14 @@ void loop() {
     //mqtt_publish("esp2/vitessevent",vitesseKM);
     //mqtt_publish("esp2/temperatureExt",temperatureext);
     tempoDepart = millis();
-    mqtt_publish("esp2/millis",tempoDepart);
+    mqtt_publish("esp2/millis",tempoDepart); // SM-12 : Remontée valeur tempoDepart basée sur millis()
+
+    if (tempoDepart >=50000)
+    {
+      client.publish("esp2/admin","max valeur");
+      delay(1000); //To allow serial and mqtt messages are delivered
+      ESP.restart();
+    }
 
   }
 
