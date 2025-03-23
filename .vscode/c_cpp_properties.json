@@ -10,6 +10,7 @@
             "includePath": [
                 "d:/FABRICE/DEV_PERSO/projets/Station_Meteo/Projet01/include",
                 "d:/FABRICE/DEV_PERSO/projets/Station_Meteo/Projet01/src",
+                "d:/FABRICE/DEV_PERSO/projets/Station_Meteo/Projet01/.pio/libdeps/nodemcuv2/PubSubClient/src",
                 "d:/FABRICE/DEV_PERSO/projets/Station_Meteo/Projet01/.pio/libdeps/nodemcuv2/Blynk/src",
                 "C:/Users/a2fro/.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266WiFi/src",
                 "d:/FABRICE/DEV_PERSO/projets/Station_Meteo/Projet01/.pio/libdeps/nodemcuv2/Adafruit BMP280 Library",
@@ -24,6 +25,7 @@
                 "C:/Users/a2fro/.platformio/packages/toolchain-xtensa/include",
                 "C:/Users/a2fro/.platformio/packages/framework-arduinoespressif8266/tools/sdk/lwip2/include",
                 "C:/Users/a2fro/.platformio/packages/framework-arduinoespressif8266/variants/nodemcu",
+                "d:/FABRICE/DEV_PERSO/projets/Station_Meteo/Projet01/.pio/libdeps/nodemcuv2/BlynkNcpDriver/src",
                 "d:/FABRICE/DEV_PERSO/projets/Station_Meteo/Projet01/.pio/libdeps/nodemcuv2/SimpleDHT",
                 "C:/Users/a2fro/.platformio/packages/framework-arduinoespressif8266/libraries/ArduinoOTA",
                 "C:/Users/a2fro/.platformio/packages/framework-arduinoespressif8266/libraries/DNSServer/src",
@@ -65,6 +67,7 @@
                 "path": [
                     "d:/FABRICE/DEV_PERSO/projets/Station_Meteo/Projet01/include",
                     "d:/FABRICE/DEV_PERSO/projets/Station_Meteo/Projet01/src",
+                    "d:/FABRICE/DEV_PERSO/projets/Station_Meteo/Projet01/.pio/libdeps/nodemcuv2/PubSubClient/src",
                     "d:/FABRICE/DEV_PERSO/projets/Station_Meteo/Projet01/.pio/libdeps/nodemcuv2/Blynk/src",
                     "C:/Users/a2fro/.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266WiFi/src",
                     "d:/FABRICE/DEV_PERSO/projets/Station_Meteo/Projet01/.pio/libdeps/nodemcuv2/Adafruit BMP280 Library",
@@ -79,6 +82,7 @@
                     "C:/Users/a2fro/.platformio/packages/toolchain-xtensa/include",
                     "C:/Users/a2fro/.platformio/packages/framework-arduinoespressif8266/tools/sdk/lwip2/include",
                     "C:/Users/a2fro/.platformio/packages/framework-arduinoespressif8266/variants/nodemcu",
+                    "d:/FABRICE/DEV_PERSO/projets/Station_Meteo/Projet01/.pio/libdeps/nodemcuv2/BlynkNcpDriver/src",
                     "d:/FABRICE/DEV_PERSO/projets/Station_Meteo/Projet01/.pio/libdeps/nodemcuv2/SimpleDHT",
                     "C:/Users/a2fro/.platformio/packages/framework-arduinoespressif8266/libraries/ArduinoOTA",
                     "C:/Users/a2fro/.platformio/packages/framework-arduinoespressif8266/libraries/DNSServer/src",
@@ -117,7 +121,7 @@
                 ]
             },
             "defines": [
-                "PLATFORMIO=60115",
+                "PLATFORMIO=60118",
                 "ESP8266",
                 "ARDUINO_ARCH_ESP8266",
                 "ARDUINO_ESP8266_NODEMCU_ESP12E",
