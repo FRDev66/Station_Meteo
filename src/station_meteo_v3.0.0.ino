@@ -5,6 +5,11 @@
 //
 // Modification : 
 // * SM-25-Intégration-Code-à-distance
+<<<<<<< HEAD
+=======
+// * SM-24-Mesure-du-Vent-confirmer-erroner
+// * SM-12-Contrôle-Module-Redémarrer-le-Module-à-distance
+>>>>>>> fc32f0ea3574c785be3bd4239428872d5f2a99d8
 //
 // ##############################################
 /***************************************************************************
@@ -53,7 +58,11 @@ char pass[] = "o3jwTuDzadcmQAtZ2r";
 #define adresseI2CduBME280 0x76              // Adresse I2C du BME280 (0x76, dans mon cas, ce qui est souvent la valeur par défaut)
 #define SEALEVELPRESSURE_HPA 1024.90         // https://fr.wikipedia.org/wiki/Pression_atmospherique (1013.25 hPa en moyenne, valeur "par défaut")
 #define delaiRafraichissementAffichage 1500  // Délai de rafraîchissement de l'affichage (en millisecondes)
+<<<<<<< HEAD
 #define tempoMesures 5000 // Délai entre 2 Mesures Statiques (temp / humidité / presssion - en millisecondes - 30 minutes) - par défaut = 240000
+=======
+#define tempoMesures 5000 // Délai entre 2 Mesures Statiques (temp / humidité / presssion - en millisecondes - 550 minutes) - par défaut = 240000 | pour Dev/Recette = 5000
+>>>>>>> fc32f0ea3574c785be3bd4239428872d5f2a99d8
 
 
 Adafruit_BME280 bme; // I2C
@@ -162,7 +171,10 @@ void loop() {
 
   client.loop();
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> fc32f0ea3574c785be3bd4239428872d5f2a99d8
   // Toutes les 30 minutes ==> Lancer une phase de Mesures Statiques
   if ( millis() - tempoDepart >= tempoMesures ) 
   {
@@ -178,9 +190,27 @@ void loop() {
     //mqtt_publish("esp2/vitessevent",vitesseKM);
     //mqtt_publish("esp2/temperatureExt",temperatureext);
     tempoDepart = millis();
+<<<<<<< HEAD
 
 
   }
+=======
+    mqtt_publish("esp2/millis",tempoDepart); // SM-12 : Remontée valeur tempoDepart basée sur millis()
+
+    // Reboot toutes les 1H
+    if (tempoDepart >= 3600000) 
+    {
+      client.publish("esp2/admin","max valeur");
+      delay(5000); //To allow serial and mqtt messages are delivered
+      ESP.restart();
+    }
+
+  }
+
+
+
+
+>>>>>>> fc32f0ea3574c785be3bd4239428872d5f2a99d8
 }
 
 void CheckConnexionBlynk() {
