@@ -1,11 +1,10 @@
 // ##############################################
-// Version rc : v2.0.0-rc1
-// Version Prod : v2.0.0
+// Version : v3.0.0-rc1
 // Auteur : FRDev66
-// Date : 04/06/2024
+// Date : 23/03/2025
 //
 // Modification : 
-// * SM7 - Afficher Mesures Vitesse du Vent sur App Web
+// * SM-25-Intégration-Code-à-distance
 //
 // ##############################################
 /***************************************************************************
@@ -31,13 +30,14 @@
 #define BLYNK_AUTH_TOKEN            "e4Ra7py3GsW9pAvPpFUZwiwB17pZIYHJ"
 
 #include <Wire.h>
-#include <SPI.h>
+//#include <SPI.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
 #include <ESP8266WiFi.h>
-#include <BlynkSimpleEsp8266.h>
-#include <Adafruit_Sensor.h>
+//#include <BlynkSimpleEsp8266.h>
+//#include <Adafruit_Sensor.h>
 #include <PubSubClient.h> //Librairie pour la gestion Mqtt 
+#include <ArduinoOTA.h>
 
 #define BLYNK_PRINT Serial
 #define BLYNK_HEARTBEAT 45
@@ -53,7 +53,7 @@ char pass[] = "o3jwTuDzadcmQAtZ2r";
 #define adresseI2CduBME280 0x76              // Adresse I2C du BME280 (0x76, dans mon cas, ce qui est souvent la valeur par défaut)
 #define SEALEVELPRESSURE_HPA 1024.90         // https://fr.wikipedia.org/wiki/Pression_atmospherique (1013.25 hPa en moyenne, valeur "par défaut")
 #define delaiRafraichissementAffichage 1500  // Délai de rafraîchissement de l'affichage (en millisecondes)
-#define tempoMesures 900000 // Délai entre 2 Mesures Statiques (temp / humidité / presssion - en millisecondes - 30 minutes) - par défaut = 240000
+#define tempoMesures 5000 // Délai entre 2 Mesures Statiques (temp / humidité / presssion - en millisecondes - 30 minutes) - par défaut = 240000
 
 
 Adafruit_BME280 bme; // I2C
@@ -143,15 +143,25 @@ void setup() {
   //pinMode(A0, INPUT);
   //analogWrite(A0, LOW);
 
-  Blynk.begin(auth, ssid, pass);
+  //Blynk.begin(auth, ssid, pass);
+
+  ConnexionWiFi();
 
   setup_mqtt();
-  client.publish("esp2/init", "Hello from ESP8266_EXT1");
+  client.publish("esp2/init", "Hello from ESP8266_EXT1_Station-Meteo");
+
+  initOTA();
+
+  
+  Serial.println("Ready");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+  client.publish("esp2/adresseIP",WiFi.localIP().toString().c_str());
 }
 
 
 void loop() { 
-  
+  ArduinoOTA.handle();
 
   client.loop();
 
@@ -159,8 +169,8 @@ void loop() {
   // Toutes les 30 minutes ==> Lancer une phase de Mesures Statiques
   if ( millis() - tempoDepart >= tempoMesures ) 
   {
-    Blynk.connect();
-    CheckConnexionBlynk();
+    //Blynk.connect();
+    //CheckConnexionBlynk();
     
     //tempoDepart = millis();
     mesure_temp_humidite();
@@ -176,6 +186,8 @@ void loop() {
   }
 }
 
+// Désactivation de la partie Blynk
+/*
 void CheckConnexionBlynk() {
   Connected2Blynk = Blynk.connected();
   
@@ -190,6 +202,7 @@ void CheckConnexionBlynk() {
     Serial.println("Toujours Connecté au Serveur Blynk !!");    
   }
 }
+*/
 
 
 void mesure_temp_humidite() {
@@ -214,11 +227,12 @@ void mesure_temp_humidite() {
   Serial.print(humidityext);
   Serial.println(" %");
 
+/*
   Blynk.virtualWrite(V6,temperatureext);
   Blynk.virtualWrite(V4,humidityext);
   Blynk.virtualWrite(V5,pression);
   Blynk.virtualWrite(V7,altitude);
-
+*/
   mqtt_publish("esp2/temperatureExt",temperatureext);
   //client.publish("esp2/temperatureExt",temperatureext);
   mqtt_publish("esp2/humiditeExt",humidityext);
@@ -249,7 +263,7 @@ void ConnexionWiFi() {
   else{
     Serial.println("\nCheck Router ");
     WiFi.begin(ssid, pass); 
-    Blynk.begin(auth, ssid, pass);  
+    //Blynk.begin(auth, ssid, pass);  
   }
 }
 
@@ -260,7 +274,7 @@ void statusConnexion() {
   Serial.print("Force du Signal");
   Serial.println(rssi);
   // Envoi de la Force du signal vers la Broche Virtuelle V1
-  Blynk.virtualWrite(V1,rssi);
+  //Blynk.virtualWrite(V1,rssi);
 }
 
 void ChargeBatterie() {
@@ -298,7 +312,7 @@ void ChargeBatterie() {
    Serial.print(chargeBat);
    Serial.println(" %");
 
-   Blynk.virtualWrite(V2,chargeBat);
+   //Blynk.virtualWrite(V2,chargeBat);
 
    //delay(1000);  
 }
@@ -338,4 +352,52 @@ void mqtt_publish(String topic, float t) {
   Serial.print("valeur topic MQTT = ");
   Serial.println(t);
   Serial.println(t_char);
+}
+
+void initOTA() {
+  // Port defaults to 8266
+   ArduinoOTA.setPort(8266);
+
+  // Hostname defaults to esp8266-[ChipID]
+  //ArduinoOTA.setHostname("esp8266");
+
+  // No authentication by default
+  // ArduinoOTA.setPassword("admin");
+
+  // Password can be set with it's md5 value as well
+  // MD5(admin) = 21232f297a57a5a743894a0e4a801fc3
+  // ArduinoOTA.setPasswordHash("21232f297a57a5a743894a0e4a801fc3");
+
+  ArduinoOTA.onStart([]() {
+    String type;
+    if (ArduinoOTA.getCommand() == U_FLASH) {
+      type = "sketch";
+    } else { // U_FS
+      type = "filesystem";
+    }
+
+    // NOTE: if updating FS this would be the place to unmount FS using FS.end()
+    Serial.println("Start updating " + type);
+  });
+  ArduinoOTA.onEnd([]() {
+    Serial.println("\nEnd");
+  });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+  });
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR) {
+      Serial.println("Auth Failed");
+    } else if (error == OTA_BEGIN_ERROR) {
+      Serial.println("Begin Failed");
+    } else if (error == OTA_CONNECT_ERROR) {
+      Serial.println("Connect Failed");
+    } else if (error == OTA_RECEIVE_ERROR) {
+      Serial.println("Receive Failed");
+    } else if (error == OTA_END_ERROR) {
+      Serial.println("End Failed");
+    }
+  });
+  ArduinoOTA.begin();
 }
