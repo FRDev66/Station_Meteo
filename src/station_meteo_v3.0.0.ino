@@ -1,10 +1,10 @@
 // ##############################################
-// Version : v3.0.0-rc1
+// Version : v3.0.0-rc2
 // Auteur : FRDev66
-// Date : 23/03/2025
+// Date : 05-01-2026
 //
 // Modification : 
-// * SM-25-Intégration-Code-à-distance
+// * ft-gestion-Wifi --> https://amp66.atlassian.net/browse/SM-36
 //
 // ##############################################
 /***************************************************************************
@@ -165,12 +165,15 @@ void loop() {
 
   client.loop();
 
-
-  // Toutes les 30 minutes ==> Lancer une phase de Mesures Statiques
+    // Toutes les 30 minutes ==> Lancer une phase de Mesures Statiques
   if ( millis() - tempoDepart >= tempoMesures ) 
   {
     //Blynk.connect();
     //CheckConnexionBlynk();
+
+    // SM-36
+    // Vérification de la connexion WiFi
+    ConnexionWiFi();
     
     //tempoDepart = millis();
     mesure_temp_humidite();
@@ -259,11 +262,24 @@ void ConnexionWiFi() {
     Serial.print("\nIP address: ");
     Serial.println(WiFi.localIP()); 
     statusConnexion();
+    // SM-36
+    // Extinction propre du WiFi
+    WiFi.disconnect(true);
+    WiFi.mode(WIFI_OFF);
+    delay(50);
+
   }
   else{
-    Serial.println("\nCheck Router ");
+    Serial.println("\n Check Router ");
     WiFi.begin(ssid, pass); 
     //Blynk.begin(auth, ssid, pass);  
+
+    // SM-36
+    // On coupe quand même le WiFi au cas où
+    WiFi.disconnect(true);
+    WiFi.mode(WIFI_OFF);
+    delay(50);
+
   }
 }
 
