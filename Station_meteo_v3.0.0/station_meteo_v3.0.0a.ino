@@ -53,7 +53,7 @@ char pass[] = "o3jwTuDzadcmQAtZ2r";
 #define adresseI2CduBME280 0x76              // Adresse I2C du BME280 (0x76, dans mon cas, ce qui est souvent la valeur par défaut)
 #define SEALEVELPRESSURE_HPA 1024.90         // https://fr.wikipedia.org/wiki/Pression_atmospherique (1013.25 hPa en moyenne, valeur "par défaut")
 #define delaiRafraichissementAffichage 1500  // Délai de rafraîchissement de l'affichage (en millisecondes)
-#define tempoMesures 10000 // Délai entre 2 Mesures Statiques (temp / humidité / pression - en millisecondes - 30 minutes) - par défaut = 240000
+#define tempoMesures 5000 // Délai entre 2 Mesures Statiques (temp / humidité / presssion - en millisecondes - 30 minutes) - par défaut = 240000
 
 
 Adafruit_BME280 bme; // I2C
@@ -139,16 +139,6 @@ void setup() {
   }
   Serial.println();
 
-  // Mode forced → ultra basse consommation
-  bme.setSampling(
-    Adafruit_BME280::MODE_FORCED,
-    Adafruit_BME280::SAMPLING_X1,
-    Adafruit_BME280::SAMPLING_X1,
-    Adafruit_BME280::SAMPLING_X1,
-    Adafruit_BME280::FILTER_OFF
-  );
-
-
   // déclare le PIN raccordé à la Batterie Pôle POSITIF : A1
   //pinMode(A0, INPUT);
   //analogWrite(A0, LOW);
@@ -167,13 +157,6 @@ void setup() {
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
   client.publish("esp2/adresseIP",WiFi.localIP().toString().c_str());
-
- 
-
-  // Mise en veille pour 10 secondes
-  //ESP.deepSleep(20e6);
-
-
 }
 
 
@@ -182,14 +165,8 @@ void loop() {
 
   client.loop();
 
-  mesurerValeurs();
 
-  delay(5000);
-
-}
-
-void mesurerValeurs() {
-   // Toutes les 30 minutes ==> Lancer une phase de Mesures Statiques
+  // Toutes les 30 minutes ==> Lancer une phase de Mesures Statiques
   if ( millis() - tempoDepart >= tempoMesures ) 
   {
     //Blynk.connect();
@@ -204,9 +181,10 @@ void mesurerValeurs() {
     //mqtt_publish("esp2/vitessevent",vitesseKM);
     //mqtt_publish("esp2/temperatureExt",temperatureext);
     tempoDepart = millis();
+
+
   }
 }
-
 
 // Désactivation de la partie Blynk
 /*
@@ -260,9 +238,6 @@ void mesure_temp_humidite() {
   mqtt_publish("esp2/humiditeExt",humidityext);
   mqtt_publish("esp2/pressionExt",pression);
   mqtt_publish("esp2/altitudeExt",altitude);
-
-  //connexionWiFiOff();
-  
 }
 
 void mesure_vent() {
@@ -289,23 +264,6 @@ void ConnexionWiFi() {
     Serial.println("\nCheck Router ");
     WiFi.begin(ssid, pass); 
     //Blynk.begin(auth, ssid, pass);  
-  }
-}
-
-void connexionWiFiOff() {
-  if (WiFi.status() == WL_CONNECTED) {
-      
-      // Extinction propre du WiFi
-      WiFi.disconnect(true);
-      WiFi.mode(WIFI_OFF);
-      delay(50);
-  } else {
-      // Pas de WiFi → stockage
-      //storeMeasurement(t, h, p);
-      // On coupe quand même le WiFi au cas où
-      WiFi.disconnect(true);
-      WiFi.mode(WIFI_OFF);
-      delay(50);
   }
 }
 
