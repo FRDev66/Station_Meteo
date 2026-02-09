@@ -80,10 +80,14 @@ float millivolt = 0;
 float vitesseKM = 0;
 
 // MQTT Broker  
-#define MQTT_BROKER       "192.168.1.61"
+/* #define MQTT_BROKER       "192.168.1.61"
 #define MQTT_BROKER_PORT  1883
 #define MQTT_USERNAME     "frdev66"
-#define MQTT_KEY          "Lenems66!!"
+#define MQTT_KEY          "Lenems66!!" */
+#define MQTT_BROKER       "192.168.1.49"
+#define MQTT_BROKER_PORT  1883
+#define MQTT_USERNAME     "mqtt"
+#define MQTT_KEY          "Electronlibre66!!"
 
 WiFiClient espClient2;            // Use this for WiFi instead of EthernetClient
 PubSubClient client(espClient2);
@@ -140,13 +144,13 @@ void setup() {
   Serial.println();
 
   // Mode forced → ultra basse consommation
-  bme.setSampling(
+  /* bme.setSampling(
     Adafruit_BME280::MODE_FORCED,
     Adafruit_BME280::SAMPLING_X1,
     Adafruit_BME280::SAMPLING_X1,
     Adafruit_BME280::SAMPLING_X1,
     Adafruit_BME280::FILTER_OFF
-  );
+  ); */
 
 
   // déclare le PIN raccordé à la Batterie Pôle POSITIF : A1
@@ -183,8 +187,6 @@ void loop() {
   client.loop();
 
   mesurerValeurs();
-
-  delay(5000);
 
 }
 
@@ -401,7 +403,7 @@ void initOTA() {
    ArduinoOTA.setPort(8266);
 
   // Hostname defaults to esp8266-[ChipID]
-  //ArduinoOTA.setHostname("esp8266");
+  // ArduinoOTA.setHostname("esp8266");
 
   // No authentication by default
   // ArduinoOTA.setPassword("admin");
