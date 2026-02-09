@@ -92,6 +92,7 @@ float vitesseKM = 0;
 WiFiClient espClient2;            // Use this for WiFi instead of EthernetClient
 PubSubClient client(espClient2);
 
+
 void setup() {
   Serial.begin(115200);
 
@@ -197,6 +198,11 @@ void mesurerValeurs() {
     //Blynk.connect();
     //CheckConnexionBlynk();
     
+    //ConnexionWiFi();
+    //delay(5000);
+    //Serial.print("Système connecté");
+    //delay(5000);
+    
     //tempoDepart = millis();
     mesure_temp_humidite();
     //ChargeBatterie();
@@ -264,7 +270,8 @@ void mesure_temp_humidite() {
   mqtt_publish("esp2/altitudeExt",altitude);
 
   //connexionWiFiOff();
-  
+  //Serial.print("Système déconnecté");
+  //delay(5000);  
 }
 
 void mesure_vent() {
@@ -319,6 +326,8 @@ void statusConnexion() {
   Serial.println(rssi);
   // Envoi de la Force du signal vers la Broche Virtuelle V1
   //Blynk.virtualWrite(V1,rssi);
+
+  mqtt_publish("esp2/connexion wiFi status",rssi); 
 }
 
 void ChargeBatterie() {
