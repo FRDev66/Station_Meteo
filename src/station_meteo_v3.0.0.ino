@@ -84,6 +84,9 @@ float vitesseKM = 0;
 WiFiClient espClient2;            // Use this for WiFi instead of EthernetClient
 PubSubClient client(espClient2);
 
+bool otaActif = true;
+
+
 void setup() {
   Serial.begin(115200);
 
@@ -165,11 +168,12 @@ void setup() {
 
 
 void loop() { 
-  ArduinoOTA.handle();
+  //ArduinoOTA.handle();
+  if (otaActif) {
+    ArduinoOTA.handle();
+  }
   client.loop();
   mesurerValeurs();
-  //connexionWiFiOff();
-  //ConnexionWiFi();
 
 }
 
@@ -177,12 +181,17 @@ void mesurerValeurs() {
    // Toutes les 30 minutes ==> Lancer une phase de Mesures Statiques
   if ( millis() - tempoDepart >= tempoMesures ) 
   {
+    desactiverOTA();   // ⛔ Désactivation OTA pendant les mesures
+
     ConnexionWiFi();
     delay(5000);
     setup_mqtt();
     delay(5000);
     mesure_temp_humidite();
     //mesure_vent();
+
+    activerOTA();      // ✅ Réactivation OTA après les mesures
+
     tempoDepart = millis();
   }
 }
@@ -337,6 +346,18 @@ void mqtt_publish(String topic, float t) {
   Serial.print("valeur topic MQTT = ");
   Serial.println(t);
   Serial.println(t_char);
+}
+
+void activerOTA() {
+  otaActif = true;
+  ArduinoOTA.begin();
+  Serial.println("OTA activé");
+}
+
+void desactiverOTA() {
+  otaActif = false;
+  ArduinoOTA.end();
+  Serial.println("OTA désactivé");
 }
 
 void initOTA() {
