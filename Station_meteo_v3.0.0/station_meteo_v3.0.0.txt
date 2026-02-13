@@ -35,11 +35,14 @@
 #include <Adafruit_BME280.h>
 #include <ESP8266WiFi.h>
 //#include <BlynkSimpleEsp8266.h>
+//#include <Adafruit_Sensor.h>
 #include <PubSubClient.h> //Librairie pour la gestion Mqtt 
 #include <ArduinoOTA.h>
 
 #define BLYNK_PRINT Serial
 #define BLYNK_HEARTBEAT 45
+
+
 
 //#define BLYNK_PRINT Serial // Enables Serial Monitor
 char auth[] = BLYNK_AUTH_TOKEN;
@@ -52,12 +55,17 @@ char pass[] = "o3jwTuDzadcmQAtZ2r";
 #define delaiRafraichissementAffichage 1500  // Délai de rafraîchissement de l'affichage (en millisecondes)
 #define tempoMesures 10000 // Délai entre 2 Mesures Statiques (temp / humidité / pression - en millisecondes - 30 minutes) - par défaut = 240000
 
+
 Adafruit_BME280 bme; // I2C
+//Adafruit_BME280 bme(BME_CS); // hardware SPI
+//Adafruit_BME280 bme(BME_CS, BME_MOSI, BME_MISO, BME_SCK); // software SPI
 
 byte nombreDePeripheriquesTrouves = 0;    // Variable indiquant combien de périphériques I2C ont répondu "présent"
 
 //unsigned long delayTime;
 unsigned long tempoDepart = 0;
+
+//bool Connected2Blynk = false;
 
 // Déclaration Variables pour la Fonction ChargeBatterie()
 // Fonction ChargeBatterie() : permet de remonter le niveau de charge de la batterie via le port V2
@@ -83,6 +91,7 @@ float vitesseKM = 0;
 
 WiFiClient espClient2;            // Use this for WiFi instead of EthernetClient
 PubSubClient client(espClient2);
+
 
 void setup() {
   Serial.begin(115200);
@@ -149,6 +158,8 @@ void setup() {
   //pinMode(A0, INPUT);
   //analogWrite(A0, LOW);
 
+  //Blynk.begin(auth, ssid, pass);
+
   ConnexionWiFi();
 
   setup_mqtt();
@@ -156,20 +167,30 @@ void setup() {
 
   initOTA();
 
+  
   Serial.println("Ready");
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
-  client.publish("esp2/adresseIP",WiFi.localIP().toString().c_str()); 
+  client.publish("esp2/adresseIP",WiFi.localIP().toString().c_str());
+
+ 
+
+  // Mise en veille pour 10 secondes
+  //ESP.deepSleep(20e6);
+
 
 }
 
 
 void loop() { 
   ArduinoOTA.handle();
+  if (WiFi.status() != WL_CONNECTED) {
+    restartWifi();
+  }
+
   client.loop();
+
   mesurerValeurs();
-  //connexionWiFiOff();
-  //ConnexionWiFi();
 
 }
 
@@ -177,15 +198,44 @@ void mesurerValeurs() {
    // Toutes les 30 minutes ==> Lancer une phase de Mesures Statiques
   if ( millis() - tempoDepart >= tempoMesures ) 
   {
-    ConnexionWiFi();
-    delay(5000);
-    setup_mqtt();
-    delay(5000);
+    //Blynk.connect();
+    //CheckConnexionBlynk();
+    
+    //ConnexionWiFi();
+    //delay(5000);
+    //Serial.print("Système connecté");
+    //delay(5000);
+    
+    //tempoDepart = millis();
     mesure_temp_humidite();
-    //mesure_vent();
+    //ChargeBatterie();
+
+    mesure_vent();
+    
+    //mqtt_publish("esp2/vitessevent",vitesseKM);
+    //mqtt_publish("esp2/temperatureExt",temperatureext);
     tempoDepart = millis();
   }
 }
+
+
+// Désactivation de la partie Blynk
+/*
+void CheckConnexionBlynk() {
+  Connected2Blynk = Blynk.connected();
+  
+  Serial.print("Check Connexion Blynk Cloud : ");
+  Serial.println(Connected2Blynk);
+
+  if(!Connected2Blynk){
+    Serial.println("Connexion au Serveur Blynk KO !!");
+    ConnexionWiFi();  
+  }
+  else{
+    Serial.println("Toujours Connecté au Serveur Blynk !!");    
+  }
+}
+*/
 
 
 void mesure_temp_humidite() {
@@ -210,15 +260,21 @@ void mesure_temp_humidite() {
   Serial.print(humidityext);
   Serial.println(" %");
 
+/*
+  Blynk.virtualWrite(V6,temperatureext);
+  Blynk.virtualWrite(V4,humidityext);
+  Blynk.virtualWrite(V5,pression);
+  Blynk.virtualWrite(V7,altitude);
+*/
   mqtt_publish("esp2/temperatureExt",temperatureext);
+  //client.publish("esp2/temperatureExt",temperatureext);
   mqtt_publish("esp2/humiditeExt",humidityext);
   mqtt_publish("esp2/pressionExt",pression);
   mqtt_publish("esp2/altitudeExt",altitude);
 
-  delay(5000);
-
-  connexionWiFiOff();
-
+  //connexionWiFiOff();
+  //Serial.print("Système déconnecté");
+  //delay(5000);  
 }
 
 void mesure_vent() {
@@ -231,7 +287,8 @@ void mesure_vent() {
   Serial.println(millivolt);
   Serial.print("Vitesse vent Km/h = ");
   Serial.println(vitesseKM);
-  //mqtt_publish("esp2/vitessevent",vitesseKM);
+
+  mqtt_publish("esp2/vitessevent",vitesseKM);
 }
 
 void ConnexionWiFi() {
@@ -243,15 +300,13 @@ void ConnexionWiFi() {
   else{
     Serial.println("\nCheck Router ");
     WiFi.begin(ssid, pass); 
+    //Blynk.begin(auth, ssid, pass);  
   }
-  client.publish("esp2/EtatWifi","CONNECTED");
-  Serial.print("Etat WiFi = CONNECTED !!");
 }
 
 void connexionWiFiOff() {
-  client.publish("esp2/EtatWifi","Déconnecté");
-  Serial.print("Etat WiFi = DECONNECTED !!");
   if (WiFi.status() == WL_CONNECTED) {
+      
       // Extinction propre du WiFi
       WiFi.disconnect(true);
       WiFi.mode(WIFI_OFF);
@@ -297,7 +352,50 @@ void statusConnexion() {
   // Affiche le RSSI
   Serial.print("Force du Signal");
   Serial.println(rssi);
+  // Envoi de la Force du signal vers la Broche Virtuelle V1
+  //Blynk.virtualWrite(V1,rssi);
+
   mqtt_publish("esp2/connexion wiFi status",rssi); 
+}
+
+void ChargeBatterie() {
+//La fonction analogRead de Arduino renvoie une valeur comprise entre 0 et 1023 avec une correspondance linéaire par rapport à la tension de la pin analogique qui doit être entre 0 et 5V
+//ValeurADC = Tension * 1023 / 5 et inversement : Tension = ValeurADC * 5 / 1023 ==> 5/1023 = 0.0048
+   data = analogRead(A0);
+   voltage = data * 0.0048;
+   //chargeBat = (voltage * 100) / tension;
+   if (voltage > 3.7) {
+    chargeBat = 100;   
+   } else if (voltage > 3.63) {
+    chargeBat = 90;       
+   } else if (voltage > 3.56) {
+    chargeBat = 80;
+   } else if (voltage > 3.49) {
+    chargeBat = 70;
+   } else if (voltage > 3.42) {
+    chargeBat = 60;
+   } else if (voltage > 3.35) {
+    chargeBat = 50;
+   } else if (voltage > 3.28) {
+    chargeBat = 40;
+   } else if (voltage > 3.21) {
+    chargeBat = 30;
+   } else if (voltage > 3.14) {
+    chargeBat = 20;
+   } else if (voltage > 3.07) {
+    chargeBat = 10;
+   } else if (voltage < 3.0) {
+    chargeBat = 0;       
+   }
+          
+   Serial.print(voltage);
+   Serial.println(" Volts");
+   Serial.print(chargeBat);
+   Serial.println(" %");
+
+   //Blynk.virtualWrite(V2,chargeBat);
+
+   //delay(1000);  
 }
 
 void setup_mqtt() {
@@ -307,11 +405,9 @@ void setup_mqtt() {
 
 void reconnect() {
   while (!client.connected()) {
-    client.publish("esp2/mqtt","Connection au serveur MQTT ...");
-    Serial.print("Connection au serveur MQTT ...");
+    Serial.println("Connection au serveur MQTT ...");
     if (client.connect("ESPClientExterieur", MQTT_USERNAME, MQTT_KEY)) {
       Serial.println("MQTT connecté");
-      client.publish("esp2/EtatWifi","CONNECTED");
     }
     else {
       Serial.print("echec, code erreur= ");
