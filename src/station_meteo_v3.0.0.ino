@@ -1,10 +1,10 @@
 // ##############################################
-// Version : v3.0.0-rc1
+// Version : v3.0.0-rc2
 // Auteur : FRDev66
-// Date : 23/03/2025
+// Date : 15/02/2026
 //
 // Modification : 
-// * SM-25-Intégration-Code-à-distance
+// * SM-36 : Arrêt / Relance du module WiFi
 //
 // ##############################################
 /***************************************************************************
@@ -50,7 +50,7 @@ char pass[] = "o3jwTuDzadcmQAtZ2r";
 #define adresseI2CduBME280 0x76              // Adresse I2C du BME280 (0x76, dans mon cas, ce qui est souvent la valeur par défaut)
 #define SEALEVELPRESSURE_HPA 1024.90         // https://fr.wikipedia.org/wiki/Pression_atmospherique (1013.25 hPa en moyenne, valeur "par défaut")
 #define delaiRafraichissementAffichage 1500  // Délai de rafraîchissement de l'affichage (en millisecondes)
-#define tempoMesures 10000 // Délai entre 2 Mesures Statiques (temp / humidité / pression - en millisecondes - 30 minutes) - par défaut = 240000
+#define tempoMesure 60000 // Délai entre 2 Mesures Statiques (temp / humidité / pression - en millisecondes - 30 minutes) - par défaut = 240000
 
 Adafruit_BME280 bme; // I2C
 
@@ -178,20 +178,27 @@ void loop() {
 }
 
 void mesurerValeurs() {
-   // Toutes les 30 minutes ==> Lancer une phase de Mesures Statiques
+// Toutes les 30 minutes ==> Lancer une phase de Mesures Statiques
+// Séquence enchainement des étapes :
+// A chaque temps de mesure -->
+// --> désactivation OTA >> desactiverOTA()
+// --> connexion WiFi >>  ConnexionWiFi() + attente 5s 
+// --> lancement mqtt >> setup_mqtt() + attente 5s
+// --> exécution des mesures + attente 2s
+// --> Déconnexion WiFi >> connexionWiFiOff()
+// --> activation OTA >> activerOTA()
+// --> remise à 0 de la séquence >> tempoDepart = millis()
   if ( millis() - tempoDepart >= tempoMesures ) 
   {
     desactiverOTA();   // ⛔ Désactivation OTA pendant les mesures
-
     ConnexionWiFi();
     delay(5000);
     setup_mqtt();
     delay(5000);
     mesure_temp_humidite();
-    //mesure_vent();
-
+    //mesure_vent(); // à activier dès la partie anémomètre OK
+    delay(2000);
     activerOTA();      // ✅ Réactivation OTA après les mesures
-
     tempoDepart = millis();
   }
 }
@@ -202,32 +209,31 @@ void mesure_temp_humidite() {
   float pression = bme.readPressure() / 100.0F;
   float altitude = bme.readAltitude(SEALEVELPRESSURE_HPA);
   float humidityext = bme.readHumidity();
-  
+// DEBUT - affichage sur le moniteur série
   Serial.print("Temperature = ");
   Serial.print(temperatureext);
   Serial.println(" °C");
-
+// --
   Serial.print("Pression Atmospherique = ");
   Serial.print(pression);
   Serial.println(" hPa");
-
+// --
   Serial.print("Approx. Altitude = ");
   Serial.print(altitude);
   Serial.println(" m");
-
+// --
   Serial.print("Humidite = ");
   Serial.print(humidityext);
   Serial.println(" %");
-
+// FIN - affichage sur le moniteur série
+// DEBUT - affichage sur Broker MQTT
   mqtt_publish("esp2/temperatureExt",temperatureext);
   mqtt_publish("esp2/humiditeExt",humidityext);
   mqtt_publish("esp2/pressionExt",pression);
   mqtt_publish("esp2/altitudeExt",altitude);
-
+// FIN - affichage sur Broker MQTT
   delay(5000);
-
   connexionWiFiOff();
-
 }
 
 void mesure_vent() {
@@ -280,17 +286,14 @@ void restartWifi() {
   WiFi.disconnect(true);   // Déconnexion + effacement config
   WiFi.mode(WIFI_OFF);     // Désactive le WiFi
   delay(200);
-
   Serial.println("Relance du WiFi...");
   WiFi.mode(WIFI_STA);     // Mode station
   WiFi.begin("SSID", "PASSWORD");
-
   unsigned long start = millis();
   while (WiFi.status() != WL_CONNECTED && millis() - start < 10000) {
     delay(200);
     Serial.print(".");
   }
-
   if (WiFi.status() == WL_CONNECTED) {
     Serial.println("\nWiFi reconnecté !");
     Serial.println(WiFi.localIP());
@@ -339,8 +342,7 @@ void mqtt_publish(String topic, float t) {
   char t_char[50];
   String t_str = String(t);
   t_str.toCharArray(t_char, t_str.length() + 1);
-  client.publish(top,t_char);
-  
+  client.publish(top,t_char); 
   Serial.print("topic = ");
   Serial.println(top);
   Serial.print("valeur topic MQTT = ");
