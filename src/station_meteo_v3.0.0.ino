@@ -188,7 +188,7 @@ void mesurerValeurs() {
 // --> Déconnexion WiFi >> connexionWiFiOff()
 // --> activation OTA >> activerOTA()
 // --> remise à 0 de la séquence >> tempoDepart = millis()
-  if ( millis() - tempoDepart >= tempoMesures ) 
+  if ( millis() - tempoDepart >= tempoMesure ) 
   {
     desactiverOTA();   // ⛔ Désactivation OTA pendant les mesures
     ConnexionWiFi();
