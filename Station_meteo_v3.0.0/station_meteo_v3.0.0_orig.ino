@@ -1,10 +1,10 @@
 // ##############################################
-// Version : v3.0.0-rc2
+// Version : v3.0.0-rc1
 // Auteur : FRDev66
-// Date : 15/02/2026
+// Date : 23/03/2025
 //
 // Modification : 
-// * SM-36 : Arrêt / Relance du module WiFi
+// * SM-25-Intégration-Code-à-distance
 //
 // ##############################################
 /***************************************************************************
@@ -35,11 +35,14 @@
 #include <Adafruit_BME280.h>
 #include <ESP8266WiFi.h>
 //#include <BlynkSimpleEsp8266.h>
+//#include <Adafruit_Sensor.h>
 #include <PubSubClient.h> //Librairie pour la gestion Mqtt 
 #include <ArduinoOTA.h>
 
 #define BLYNK_PRINT Serial
 #define BLYNK_HEARTBEAT 45
+
+
 
 //#define BLYNK_PRINT Serial // Enables Serial Monitor
 char auth[] = BLYNK_AUTH_TOKEN;
@@ -50,14 +53,19 @@ char pass[] = "o3jwTuDzadcmQAtZ2r";
 #define adresseI2CduBME280 0x76              // Adresse I2C du BME280 (0x76, dans mon cas, ce qui est souvent la valeur par défaut)
 #define SEALEVELPRESSURE_HPA 1024.90         // https://fr.wikipedia.org/wiki/Pression_atmospherique (1013.25 hPa en moyenne, valeur "par défaut")
 #define delaiRafraichissementAffichage 1500  // Délai de rafraîchissement de l'affichage (en millisecondes)
-#define tempoMesure 60000 // Délai entre 2 Mesures Statiques (temp / humidité / pression - en millisecondes - 30 minutes) - par défaut = 240000
+#define tempoMesures 10000 // Délai entre 2 Mesures Statiques (temp / humidité / pression - en millisecondes - 30 minutes) - par défaut = 240000
+
 
 Adafruit_BME280 bme; // I2C
+//Adafruit_BME280 bme(BME_CS); // hardware SPI
+//Adafruit_BME280 bme(BME_CS, BME_MOSI, BME_MISO, BME_SCK); // software SPI
 
 byte nombreDePeripheriquesTrouves = 0;    // Variable indiquant combien de périphériques I2C ont répondu "présent"
 
 //unsigned long delayTime;
 unsigned long tempoDepart = 0;
+
+//bool Connected2Blynk = false;
 
 // Déclaration Variables pour la Fonction ChargeBatterie()
 // Fonction ChargeBatterie() : permet de remonter le niveau de charge de la batterie via le port V2
@@ -76,15 +84,13 @@ float vitesseKM = 0;
 #define MQTT_BROKER_PORT  1883
 #define MQTT_USERNAME     "frdev66"
 #define MQTT_KEY          "Lenems66!!" */
-#define MQTT_BROKER       "192.168.1.41"
+#define MQTT_BROKER       "192.168.1.49"
 #define MQTT_BROKER_PORT  1883
 #define MQTT_USERNAME     "mqtt"
 #define MQTT_KEY          "Electronlibre66!!"
 
 WiFiClient espClient2;            // Use this for WiFi instead of EthernetClient
 PubSubClient client(espClient2);
-
-bool otaActif = true;
 
 
 void setup() {
@@ -152,6 +158,8 @@ void setup() {
   //pinMode(A0, INPUT);
   //analogWrite(A0, LOW);
 
+  //Blynk.begin(auth, ssid, pass);
+
   ConnexionWiFi();
 
   setup_mqtt();
@@ -159,49 +167,71 @@ void setup() {
 
   initOTA();
 
+  
   Serial.println("Ready");
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
   client.publish("esp2/adresseIP",WiFi.localIP().toString().c_str()); 
 
+  // Mise en veille pour 10 secondes
+  //ESP.deepSleep(20e6);
 }
 
 
 void loop() { 
-  //ArduinoOTA.handle();
-  if (otaActif) {
-    ArduinoOTA.handle();
+  ArduinoOTA.handle();
+  if (WiFi.status() != WL_CONNECTED) {
+    restartWifi();
   }
+
   client.loop();
+
   mesurerValeurs();
 
 }
 
 void mesurerValeurs() {
-// Toutes les 30 minutes ==> Lancer une phase de Mesures Statiques
-// Séquence enchainement des étapes :
-// A chaque temps de mesure -->
-// --> désactivation OTA >> desactiverOTA()
-// --> connexion WiFi >>  ConnexionWiFi() + attente 5s 
-// --> lancement mqtt >> setup_mqtt() + attente 5s
-// --> exécution des mesures + attente 2s
-// --> Déconnexion WiFi >> connexionWiFiOff()
-// --> activation OTA >> activerOTA()
-// --> remise à 0 de la séquence >> tempoDepart = millis()
-  if ( millis() - tempoDepart >= tempoMesure ) 
+   // Toutes les 30 minutes ==> Lancer une phase de Mesures Statiques
+  if ( millis() - tempoDepart >= tempoMesures ) 
   {
-    desactiverOTA();   // ⛔ Désactivation OTA pendant les mesures
-    ConnexionWiFi();
-    delay(5000);
-    setup_mqtt();
-    delay(5000);
+    //Blynk.connect();
+    //CheckConnexionBlynk();
+    
+    //ConnexionWiFi();
+    //delay(5000);
+    //Serial.print("Système connecté");
+    //delay(5000);
+    
+    //tempoDepart = millis();
     mesure_temp_humidite();
-    //mesure_vent(); // à activier dès la partie anémomètre OK
-    delay(2000);
-    activerOTA();      // ✅ Réactivation OTA après les mesures
+    //ChargeBatterie();
+
+    mesure_vent();
+    
+    //mqtt_publish("esp2/vitessevent",vitesseKM);
+    //mqtt_publish("esp2/temperatureExt",temperatureext);
     tempoDepart = millis();
   }
 }
+
+
+// Désactivation de la partie Blynk
+/*
+void CheckConnexionBlynk() {
+  Connected2Blynk = Blynk.connected();
+  
+  Serial.print("Check Connexion Blynk Cloud : ");
+  Serial.println(Connected2Blynk);
+
+  if(!Connected2Blynk){
+    Serial.println("Connexion au Serveur Blynk KO !!");
+    ConnexionWiFi();  
+  }
+  else{
+    Serial.println("Toujours Connecté au Serveur Blynk !!");    
+  }
+}
+*/
 
 
 void mesure_temp_humidite() {
@@ -209,31 +239,38 @@ void mesure_temp_humidite() {
   float pression = bme.readPressure() / 100.0F;
   float altitude = bme.readAltitude(SEALEVELPRESSURE_HPA);
   float humidityext = bme.readHumidity();
-// DEBUT - affichage sur le moniteur série
+  
   Serial.print("Temperature = ");
   Serial.print(temperatureext);
   Serial.println(" °C");
-// --
+
   Serial.print("Pression Atmospherique = ");
   Serial.print(pression);
   Serial.println(" hPa");
-// --
+
   Serial.print("Approx. Altitude = ");
   Serial.print(altitude);
   Serial.println(" m");
-// --
+
   Serial.print("Humidite = ");
   Serial.print(humidityext);
   Serial.println(" %");
-// FIN - affichage sur le moniteur série
-// DEBUT - affichage sur Broker MQTT
+
+/*
+  Blynk.virtualWrite(V6,temperatureext);
+  Blynk.virtualWrite(V4,humidityext);
+  Blynk.virtualWrite(V5,pression);
+  Blynk.virtualWrite(V7,altitude);
+*/
   mqtt_publish("esp2/temperatureExt",temperatureext);
+  //client.publish("esp2/temperatureExt",temperatureext);
   mqtt_publish("esp2/humiditeExt",humidityext);
   mqtt_publish("esp2/pressionExt",pression);
   mqtt_publish("esp2/altitudeExt",altitude);
-// FIN - affichage sur Broker MQTT
-  delay(5000);
-  connexionWiFiOff();
+
+  //connexionWiFiOff();
+  //Serial.print("Système déconnecté");
+  //delay(5000);  
 }
 
 void mesure_vent() {
@@ -246,7 +283,8 @@ void mesure_vent() {
   Serial.println(millivolt);
   Serial.print("Vitesse vent Km/h = ");
   Serial.println(vitesseKM);
-  //mqtt_publish("esp2/vitessevent",vitesseKM);
+
+  mqtt_publish("esp2/vitessevent",vitesseKM);
 }
 
 void ConnexionWiFi() {
@@ -258,15 +296,13 @@ void ConnexionWiFi() {
   else{
     Serial.println("\nCheck Router ");
     WiFi.begin(ssid, pass); 
+    //Blynk.begin(auth, ssid, pass);  
   }
-  client.publish("esp2/EtatWifi","CONNECTED");
-  Serial.print("Etat WiFi = CONNECTED !!");
 }
 
 void connexionWiFiOff() {
-  client.publish("esp2/EtatWifi","Déconnecté");
-  Serial.print("Etat WiFi = DECONNECTED !!");
   if (WiFi.status() == WL_CONNECTED) {
+      
       // Extinction propre du WiFi
       WiFi.disconnect(true);
       WiFi.mode(WIFI_OFF);
@@ -286,14 +322,17 @@ void restartWifi() {
   WiFi.disconnect(true);   // Déconnexion + effacement config
   WiFi.mode(WIFI_OFF);     // Désactive le WiFi
   delay(200);
+
   Serial.println("Relance du WiFi...");
   WiFi.mode(WIFI_STA);     // Mode station
   WiFi.begin("SSID", "PASSWORD");
+
   unsigned long start = millis();
   while (WiFi.status() != WL_CONNECTED && millis() - start < 10000) {
     delay(200);
     Serial.print(".");
   }
+
   if (WiFi.status() == WL_CONNECTED) {
     Serial.println("\nWiFi reconnecté !");
     Serial.println(WiFi.localIP());
@@ -309,7 +348,50 @@ void statusConnexion() {
   // Affiche le RSSI
   Serial.print("Force du Signal");
   Serial.println(rssi);
+  // Envoi de la Force du signal vers la Broche Virtuelle V1
+  //Blynk.virtualWrite(V1,rssi);
+
   mqtt_publish("esp2/connexion wiFi status",rssi); 
+}
+
+void ChargeBatterie() {
+//La fonction analogRead de Arduino renvoie une valeur comprise entre 0 et 1023 avec une correspondance linéaire par rapport à la tension de la pin analogique qui doit être entre 0 et 5V
+//ValeurADC = Tension * 1023 / 5 et inversement : Tension = ValeurADC * 5 / 1023 ==> 5/1023 = 0.0048
+   data = analogRead(A0);
+   voltage = data * 0.0048;
+   //chargeBat = (voltage * 100) / tension;
+   if (voltage > 3.7) {
+    chargeBat = 100;   
+   } else if (voltage > 3.63) {
+    chargeBat = 90;       
+   } else if (voltage > 3.56) {
+    chargeBat = 80;
+   } else if (voltage > 3.49) {
+    chargeBat = 70;
+   } else if (voltage > 3.42) {
+    chargeBat = 60;
+   } else if (voltage > 3.35) {
+    chargeBat = 50;
+   } else if (voltage > 3.28) {
+    chargeBat = 40;
+   } else if (voltage > 3.21) {
+    chargeBat = 30;
+   } else if (voltage > 3.14) {
+    chargeBat = 20;
+   } else if (voltage > 3.07) {
+    chargeBat = 10;
+   } else if (voltage < 3.0) {
+    chargeBat = 0;       
+   }
+          
+   Serial.print(voltage);
+   Serial.println(" Volts");
+   Serial.print(chargeBat);
+   Serial.println(" %");
+
+   //Blynk.virtualWrite(V2,chargeBat);
+
+   //delay(1000);  
 }
 
 void setup_mqtt() {
@@ -319,11 +401,9 @@ void setup_mqtt() {
 
 void reconnect() {
   while (!client.connected()) {
-    client.publish("esp2/mqtt","Connection au serveur MQTT ...");
-    Serial.print("Connection au serveur MQTT ...");
+    Serial.println("Connection au serveur MQTT ...");
     if (client.connect("ESPClientExterieur", MQTT_USERNAME, MQTT_KEY)) {
       Serial.println("MQTT connecté");
-      client.publish("esp2/EtatWifi","CONNECTED");
     }
     else {
       Serial.print("echec, code erreur= ");
@@ -342,24 +422,13 @@ void mqtt_publish(String topic, float t) {
   char t_char[50];
   String t_str = String(t);
   t_str.toCharArray(t_char, t_str.length() + 1);
-  client.publish(top,t_char); 
+  client.publish(top,t_char);
+  
   Serial.print("topic = ");
   Serial.println(top);
   Serial.print("valeur topic MQTT = ");
   Serial.println(t);
   Serial.println(t_char);
-}
-
-void activerOTA() {
-  otaActif = true;
-  ArduinoOTA.begin();
-  Serial.println("OTA activé");
-}
-
-void desactiverOTA() {
-  otaActif = false;
-  ArduinoOTA.end();
-  Serial.println("OTA désactivé");
 }
 
 void initOTA() {
