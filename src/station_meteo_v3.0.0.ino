@@ -76,7 +76,7 @@ float vitesseKM = 0;
 #define MQTT_BROKER_PORT  1883
 #define MQTT_USERNAME     "frdev66"
 #define MQTT_KEY          "Lenems66!!" */
-#define MQTT_BROKER       "192.168.1.49"
+#define MQTT_BROKER       "192.168.1.41"
 #define MQTT_BROKER_PORT  1883
 #define MQTT_USERNAME     "mqtt"
 #define MQTT_KEY          "Electronlibre66!!"
